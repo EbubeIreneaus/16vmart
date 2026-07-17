@@ -18,7 +18,7 @@ def decode(token:str):
     except InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication token has expired",
+            detail="Invalid or expired token",
             headers={
                 "WWW-Authenticate": "Bearer"
             }
@@ -26,6 +26,6 @@ def decode(token:str):
     except ExpiredSignatureError:
          raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token has expired",
+            detail="Expired authentication token",
             headers={"WWW-Authenticate": "Bearer"},
         )

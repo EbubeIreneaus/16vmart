@@ -3,7 +3,10 @@ from pydantic_settings import BaseSettings
 class Setting(BaseSettings):
     DB_URL: str
     JWT_SECRET: str
-    REDIS_URL: str
+
+    REDIS_HOST: str
+    REDIS_PORT: int
+    REDIS_PASS: str
 
     MAIL_USER: str
     MAIL_HOST: str
@@ -13,6 +16,11 @@ class Setting(BaseSettings):
     MAIL_STARTTLS: bool = False
     MAIL_FROM: str
     MAIL_FROM_NAME: str
+
+    CLOUDINARY_NAME: str
+    CLOUDINARY_SECRET: str
+    CLOUDINARY_KEY: str
+    IMAGE_FOLDER: str = "16vmart"
 
     class Config:
         env_file = ".env"
