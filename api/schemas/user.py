@@ -5,10 +5,10 @@ from enum import Enum
 from datetime import datetime
 
 class ROLE(Enum):
-    ADMIN = "ADMIN"
-    SUPERADMIN = "SUPERADMIN"
-    USER = "USER"
-    SELLER = "SELLER"
+    ADMIN = "admin"
+    SUPERADMIN = "superadmin"
+    USER = "user"
+    SELLER = "seller"
 
 class STATUS(Enum):
     ACTIVE = "active"

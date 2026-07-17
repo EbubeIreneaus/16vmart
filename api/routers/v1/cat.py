@@ -21,11 +21,10 @@ from sqlalchemy import func
 from sqlalchemy.orm import selectinload
 from libs.redis import redis
 
-p_router = APIRouter(prefix="/products", tags=["Products"])  # product Router
-c_router = APIRouter(prefix="/cat", tags=["Categories"])  # category router
+router = APIRouter(prefix="/cat", tags=["Categories"])  # category router
 
 
-@c_router.get("/all", response_model=List[CategorySchemaResponse])
+@router.get("/all", response_model=List[CategorySchemaResponse])
 @limiter.limit("300/hour", error_message="Too many request, try again later")
 async def get_all_categories(request: Request, db: AsyncSession = Depends(get_db)):
 
@@ -52,7 +51,7 @@ async def get_all_categories(request: Request, db: AsyncSession = Depends(get_db
 
     return response
 
-@c_router.get("/{slug}", response_model=List[CategorySchemaResponse])
+@router.get("/{slug}", response_model=List[CategorySchemaResponse])
 @limiter.limit("300/hour", error_message="Too many request, try again later")
 async def get_single_category(request:Request, slug:str, db: AsyncSession = Depends(get_db)):
     stmt = (

@@ -85,6 +85,7 @@ class AttributeKey(Base):
     form_type: Mapped[FormTypeLiteral] = (
         mapped_column(String(25), default="text")
     )
+    options: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
     category_id: Mapped[int] = mapped_column(ForeignKey("categories.id"))
     category: Mapped[Category] = relationship(
         back_populates="attributes"

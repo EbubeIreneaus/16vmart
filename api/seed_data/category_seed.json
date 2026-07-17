@@ -1,0 +1,313 @@
+[
+  {
+    "name": "Electronics",
+    "attributes": [
+      {"name": "brand", "required": true, "form_type": "text"},
+      {"name": "warranty", "required": false, "form_type": "number"},
+      {"name": "color", "required": true, "form_type": "text"}
+    ],
+    "sub_categories": [
+      {
+        "name": "Smartphones",
+        "attributes": [
+          {"name": "rom", "required": true, "form_type": "text"},
+          {"name": "ram", "required": true, "form_type": "text"},
+          {"name": "camera_mp", "required": false, "form_type": "number"}
+        ]
+      },
+      {
+        "name": "Laptops",
+        "attributes": [
+          {"name": "processor", "required": true, "form_type": "text"},
+          {"name": "ram", "required": true, "form_type": "text"}
+        ]
+      },
+      {
+        "name": "Headphones",
+        "attributes": [
+          {"name": "connectivity", "required": true, "form_type": "radio"},
+          {"name": "battery_life", "required": false, "form_type": "number"}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Fashion",
+    "attributes": [
+      {"name": "size", "required": true, "form_type": "text"},
+      {"name": "material", "required": true, "form_type": "text"},
+      {"name": "color", "required": true, "form_type": "text"}
+    ],
+    "sub_categories": [
+      {
+        "name": "Men Shirts",
+        "attributes": [
+          {"name": "fit", "required": true, "form_type": "radio"},
+          {"name": "sleeve_length", "required": false, "form_type": "text"}
+        ]
+      },
+      {
+        "name": "Women Dresses",
+        "attributes": [
+          {"name": "occasion", "required": true, "form_type": "text"},
+          {"name": "length", "required": false, "form_type": "radio"}
+        ]
+      },
+      {
+        "name": "Shoes",
+        "attributes": [
+          {"name": "heel_height", "required": false, "form_type": "number"},
+          {"name": "shoe_type", "required": true, "form_type": "text"}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Home & Living",
+    "attributes": [
+      {"name": "room", "required": true, "form_type": "text"},
+      {"name": "delivery", "required": false, "form_type": "boolean"},
+      {"name": "assembly_required", "required": false, "form_type": "boolean"}
+    ],
+    "sub_categories": [
+      {
+        "name": "Sofas",
+        "attributes": [
+          {"name": "seat_material", "required": true, "form_type": "text"},
+          {"name": "frame_material", "required": false, "form_type": "text"}
+        ]
+      },
+      {
+        "name": "Beds",
+        "attributes": [
+          {"name": "bed_size", "required": true, "form_type": "radio"},
+          {"name": "storage", "required": false, "form_type": "boolean"}
+        ]
+      },
+      {
+        "name": "Lamps",
+        "attributes": [
+          {"name": "light_type", "required": true, "form_type": "text"},
+          {"name": "brightness", "required": false, "form_type": "number"}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Beauty",
+    "attributes": [
+      {"name": "skin_type", "required": true, "form_type": "text"},
+      {"name": "brand", "required": true, "form_type": "text"},
+      {"name": "scent", "required": false, "form_type": "radio"}
+    ],
+    "sub_categories": [
+      {
+        "name": "Skincare",
+        "attributes": [
+          {"name": "ingredient", "required": true, "form_type": "text"},
+          {"name": "spf", "required": false, "form_type": "number"}
+        ]
+      },
+      {
+        "name": "Makeup",
+        "attributes": [
+          {"name": "shade", "required": true, "form_type": "text"},
+          {"name": "finish", "required": false, "form_type": "radio"}
+        ]
+      },
+      {
+        "name": "Haircare",
+        "attributes": [
+          {"name": "hair_type", "required": true, "form_type": "text"},
+          {"name": "volume", "required": false, "form_type": "number"}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Sports",
+    "attributes": [
+      {"name": "activity", "required": true, "form_type": "text"},
+      {"name": "brand", "required": true, "form_type": "text"},
+      {"name": "season", "required": false, "form_type": "radio"}
+    ],
+    "sub_categories": [
+      {
+        "name": "Running Shoes",
+        "attributes": [
+          {"name": "terrain", "required": true, "form_type": "text"},
+          {"name": "size", "required": true, "form_type": "text"}
+        ]
+      },
+      {
+        "name": "Dumbbells",
+        "attributes": [
+          {"name": "weight", "required": true, "form_type": "number"},
+          {"name": "material", "required": false, "form_type": "text"}
+        ]
+      },
+      {
+        "name": "Fitness Bands",
+        "attributes": [
+          {"name": "tracking_mode", "required": true, "form_type": "radio"},
+          {"name": "battery_life", "required": false, "form_type": "number"}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Books & Media",
+    "attributes": [
+      {"name": "language", "required": true, "form_type": "text"},
+      {"name": "publisher", "required": false, "form_type": "text"},
+      {"name": "format", "required": true, "form_type": "radio"}
+    ],
+    "sub_categories": [
+      {
+        "name": "Novels",
+        "attributes": [
+          {"name": "genre", "required": true, "form_type": "text"},
+          {"name": "pages", "required": false, "form_type": "number"}
+        ]
+      },
+      {
+        "name": "Textbooks",
+        "attributes": [
+          {"name": "subject", "required": true, "form_type": "text"},
+          {"name": "edition", "required": false, "form_type": "number"}
+        ]
+      },
+      {
+        "name": "Comics",
+        "attributes": [
+          {"name": "series", "required": true, "form_type": "text"},
+          {"name": "age_group", "required": false, "form_type": "text"}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Toys & Games",
+    "attributes": [
+      {"name": "age_group", "required": true, "form_type": "text"},
+      {"name": "brand", "required": true, "form_type": "text"},
+      {"name": "material", "required": false, "form_type": "text"}
+    ],
+    "sub_categories": [
+      {
+        "name": "Action Figures",
+        "attributes": [
+          {"name": "character", "required": true, "form_type": "text"},
+          {"name": "scale", "required": false, "form_type": "text"}
+        ]
+      },
+      {
+        "name": "Board Games",
+        "attributes": [
+          {"name": "player_count", "required": true, "form_type": "text"},
+          {"name": "duration", "required": false, "form_type": "number"}
+        ]
+      },
+      {
+        "name": "Puzzles",
+        "attributes": [
+          {"name": "piece_count", "required": true, "form_type": "number"},
+          {"name": "difficulty", "required": false, "form_type": "radio"}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Health & Wellness",
+    "attributes": [
+      {"name": "usage", "required": true, "form_type": "text"},
+      {"name": "brand", "required": true, "form_type": "text"},
+      {"name": "form", "required": false, "form_type": "radio"}
+    ],
+    "sub_categories": [
+      {
+        "name": "Supplements",
+        "attributes": [
+          {"name": "dosage", "required": true, "form_type": "text"},
+          {"name": "flavor", "required": false, "form_type": "text"}
+        ]
+      },
+      {
+        "name": "Thermometers",
+        "attributes": [
+          {"name": "measurement_type", "required": true, "form_type": "radio"},
+          {"name": "accuracy", "required": false, "form_type": "number"}
+        ]
+      },
+      {
+        "name": "Massagers",
+        "attributes": [
+          {"name": "power_source", "required": true, "form_type": "text"},
+          {"name": "intensity", "required": false, "form_type": "radio"}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Automotive",
+    "attributes": [
+      {"name": "vehicle_type", "required": true, "form_type": "text"},
+      {"name": "brand", "required": true, "form_type": "text"},
+      {"name": "compatibility", "required": false, "form_type": "text"}
+    ],
+    "sub_categories": [
+      {
+        "name": "Car Accessories",
+        "attributes": [
+          {"name": "fitment", "required": true, "form_type": "text"},
+          {"name": "material", "required": false, "form_type": "text"}
+        ]
+      },
+      {
+        "name": "Bike Accessories",
+        "attributes": [
+          {"name": "bike_type", "required": true, "form_type": "text"},
+          {"name": "weight", "required": false, "form_type": "number"}
+        ]
+      },
+      {
+        "name": "Maintenance Kits",
+        "attributes": [
+          {"name": "kit_type", "required": true, "form_type": "text"},
+          {"name": "items_count", "required": false, "form_type": "number"}
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Garden & Outdoors",
+    "attributes": [
+      {"name": "outdoor_space", "required": true, "form_type": "text"},
+      {"name": "material", "required": true, "form_type": "text"},
+      {"name": "weather_resistant", "required": false, "form_type": "boolean"}
+    ],
+    "sub_categories": [
+      {
+        "name": "Planters",
+        "attributes": [
+          {"name": "plant_type", "required": true, "form_type": "text"},
+          {"name": "size", "required": false, "form_type": "radio"}
+        ]
+      },
+      {
+        "name": "Garden Tools",
+        "attributes": [
+          {"name": "tool_type", "required": true, "form_type": "text"},
+          {"name": "handle_material", "required": false, "form_type": "text"}
+        ]
+      },
+      {
+        "name": "Outdoor Furniture",
+        "attributes": [
+          {"name": "furniture_type", "required": true, "form_type": "text"},
+          {"name": "weight_capacity", "required": false, "form_type": "number"}
+        ]
+      }
+    ]
+  }
+]

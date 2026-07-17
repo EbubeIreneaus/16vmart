@@ -10,6 +10,7 @@ dependencies = [
     "asyncpg>=0.31.0",
     "cloudinary>=1.45.0",
     "fastapi-mail>=1.6.5",
+    "fastapi-pagination>=0.15.15",
     "fastapi[standard]>=0.139.0",
     "httpx>=0.28.1",
     "psycopg2-binary>=2.9.12",

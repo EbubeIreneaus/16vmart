@@ -1,9 +1,10 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 from enum import Enum
-from typing import Optional, List, Literal
+from typing import Any, Optional, List, Literal
+
 
 FormTypeLiteral = Literal["text", "select", "multiple", "radio", "date", "boolean", "number"]
 
@@ -33,9 +34,25 @@ class BaseProductImages(BaseModel):
     alt: Optional[str] = Field(default=None)
 
 class CategorySchema(BaseCategorySchema):
-    id: int
     slug: str
+
+    model_config = ConfigDict(from_attributes=True)
  
 class CategorySchemaResponse(CategorySchema):
     sub_categories: Optional[List[CategorySchema]] = Field(default=None)
 
+
+class ProuctAttribute(BaseModel):
+    name: str
+    type: Literal["multiple","text", "number", "date", "boolean"]
+    value: str|list|datetime|float|bool
+
+class MiniProductResponse(BaseProductShema):
+    slug: str
+    images: List[BaseProductImages]
+
+    model_config = ConfigDict(from_attributes=True)
+
+class ProductResponse(MiniProductResponse):
+    category: CategorySchema
+    attributes: List[ProuctAttribute]

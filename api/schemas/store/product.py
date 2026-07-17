@@ -3,7 +3,8 @@ from decimal import Decimal
 
 from pydantic import BaseModel, Field, HttpUrl
 from enum import Enum
-from typing import Optional, List, Literal
+from typing import Any, Optional, List, Literal
+
 from schemas.product import (
     BaseProductShema,
     BaseProductImages,
@@ -14,7 +15,7 @@ from schemas.product import (
 
 class ProductAttributes(BaseModel):
     attribute_id: int
-    value: str
+    value: Any
 
 
 class ProductSchemaIn(BaseProductShema):
