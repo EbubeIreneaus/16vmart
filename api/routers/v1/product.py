@@ -1,20 +1,15 @@
 import re
 from typing import Optional, List
-from pydantic import TypeAdapter
-from slugify import slugify
 from fastapi import APIRouter, Depends, status, HTTPException, Header, Request, Query
 from models.user import Store
-from libs.deps import get_admin, get_superadmin
 from libs.limiter import limiter
 from models.db import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import not_, or_, select, update, delete
-from datetime import datetime, timezone, timedelta
+from sqlalchemy import select
 from schemas.product import ProductResponse, MiniProductResponse
 from schemas.store.entity import STORE_STATUS
-from schemas.user import UserShema
 from models.product import Category, Product, ProductAttribute
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func, and_
 from sqlalchemy.orm import selectinload
 from libs.redis import redis
 from fastapi_pagination import Page

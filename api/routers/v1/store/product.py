@@ -1,8 +1,12 @@
+import re
 from typing import Optional, List
+from fastapi_pagination import Page
+from fastapi_pagination.ext.sqlalchemy import paginate
 from slugify import slugify
 from fastapi import (
     APIRouter,
     Depends,
+    Query,
     status,
     HTTPException,
     Header,
@@ -15,8 +19,12 @@ from libs.deps import get_store
 from models.db import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import or_, select, update, delete
-from datetime import datetime, timezone, timedelta
-from schemas.store.product import ProductSchemaIn, ProductSchemaUpdate
+from schemas.store.product import (
+    ProductSchemaIn,
+    ProductSchemaUpdate,
+    MiniProductOut,
+    SingleProductOut,
+)
 from schemas.user import UserShema
 from schemas.store.entity import StoreSchema
 from models.product import (
@@ -26,8 +34,8 @@ from models.product import (
     ProductImages,
     Product,
 )
+from models.user import Store
 from sqlalchemy import func
-from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import selectinload
 from libs.limiter import limiter
 from libs.redis import redis
@@ -35,10 +43,10 @@ from libs.cloudinary import cloudinary, cloudinary_uploader
 import asyncio
 from settings import setting
 
-router = APIRouter(prefix="/products", tags=["Stores", "Products"])
+router = APIRouter(prefix="/{store_id}/products", tags=["Stores", "Products"])
 
 
-@router.post("/{store_id}")
+@router.post("/")
 async def create_product(
     request: Request,
     body: ProductSchemaIn,
@@ -118,9 +126,9 @@ async def create_product(
             )
             form_type: FormTypeLiteral = attr_form_type[0]
             value = attribute.value
-            if form_type == "text":
+            if form_type == "text" or form_type == "radio":
                 attr.text_value = value
-            elif form_type == "boolean" or form_type == "radio":
+            elif form_type == "boolean":
                 attr.boolean_value = value
             elif form_type == "number":
                 attr.number_value = value
@@ -150,11 +158,11 @@ async def create_product(
         )
 
 
-@router.patch("/image/{store_id}/{productId}")
+@router.patch("/image/{productId}")
 async def update_product_image(
     request: Request,
     files: List[UploadFile],
-    store_id:str,
+    store_id: str,
     productId: int,
     store: StoreSchema = Depends(get_store),
     db: AsyncSession = Depends(get_db),
@@ -163,7 +171,11 @@ async def update_product_image(
         product = await db.scalar(
             select(Product)
             .options(selectinload(Product.images))
-            .where(Product.id == productId, Product.store_id == store.id)
+            .where(
+                Product.id == productId,
+                Product.store_id == store.id,
+                Product.deleted == False,
+            )
         )
         if not product:
             raise HTTPException(
@@ -198,7 +210,7 @@ async def update_product_image(
         )
 
 
-@router.delete("/image/{store_id}/{name}/{productId}")
+@router.delete("/image/{name}/{productId}")
 async def delete_product_image(
     request: Request,
     productId: int,
@@ -211,9 +223,7 @@ async def delete_product_image(
         image = await db.scalar(
             select(ProductImages)
             .options(
-                selectinload(ProductImages.product).options(
-                    selectinload(Product.store)
-                )
+                selectinload(ProductImages.product).options(selectinload(Product.store))
             )
             .where(ProductImages.name == name, ProductImages.product_id == productId)
         )
@@ -241,7 +251,7 @@ async def delete_product_image(
         )
 
 
-@router.patch("/{store_id}/{productId}")
+@router.patch("/{productId}")
 async def edit_product(
     request: Request,
     store_id: str,
@@ -254,12 +264,16 @@ async def edit_product(
         data = body.model_dump(exclude_unset=True)
         stmt = (
             update(Product)
-            .where(Product.id == productId, Product.store_id == store.id)
+            .where(
+                Product.id == productId,
+                Product.store_id == store.id,
+                Product.deleted == False,
+            )
             .values(**data)
         )
         result = await db.execute(stmt)
         await db.flush()
-        return {'data': result}
+        return {"data": result}
     except HTTPException:
         raise
     except Exception as e:
@@ -269,18 +283,122 @@ async def edit_product(
         )
 
 
-# @router.post("/create")
-# async def create_product(
-#     request: Request,
-#     store: UserShema = Depends(get_store),
-#     db: AsyncSession = Depends(get_db),
-# ):
-#     try:
-#         pass
-#     except HTTPException:
-#         raise
-#     except Exception as e:
-#         raise HTTPException(
-#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-#             detail="Unknown server error, try again later",
-#         )
+@router.get("/all", response_model=Page[MiniProductOut])
+async def create_product(
+    request: Request,
+    store_id: str,
+    store: StoreSchema = Depends(get_store),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        stmt = (
+            select(Product)
+            .options(selectinload(Product.store))
+            .where(func.lower(Store.slug) == store.slug, Product.deleted == False)
+        )
+        result = await paginate(db, stmt)
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unknown server error, try again later",
+        )
+
+
+@router.get("/search", response_model=Page[MiniProductOut])
+async def store_search_product(
+    store: StoreSchema = Depends(get_store),
+    s: str = Query(min_length=3),
+    db: AsyncSession = Depends(get_db),
+):
+
+    search_term = [re.sub(r"[^\w]", "", t) for t in s.split() if t]
+    search_term = [t for t in search_term if t]
+    search_query = func.to_tsquery("english", " | ".join(f"{t}:*" for t in search_term))
+
+    search_vector = func.to_tsvector(
+        "english",
+        Product.name,
+    )
+    search_query = func.to_tsquery("english", " | ".join(search_term))
+
+    rank = func.ts_rank(search_vector, search_query)
+
+    stmt = (
+        select(Product)
+        .options(selectinload(Product.store))
+        .where(
+            search_vector.op("@@")(search_query),
+            func.lower(Store.slug) == store.slug.lower(),
+            Product.deleted == False,
+        )
+        .order_by(rank.desc())
+    )
+    result = await paginate(db, stmt)
+
+    return result
+
+
+@router.get("/{slug}", response_model=SingleProductOut)
+async def store_get_single_product(
+    slug: str,
+    store: StoreSchema = Depends(get_store),
+    db: AsyncSession = Depends(get_db),
+):
+    _slug = slug.lower().strip()
+
+    stmt = (
+        select(Product)
+        .options(
+            selectinload(Product.images),
+            selectinload(Product.store),
+            selectinload(Product.attributes).options(
+                selectinload(ProductAttribute.attribute)
+            ),
+        )
+        .where(
+            func.lower(Store.slug) == store.slug.lower(),
+            func.lower(Product.slug) == _slug,
+            Product.deleted == False,
+        )
+    )
+
+    product = await db.scalar(stmt)
+
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="product not found"
+        )
+    attributes = product.attributes
+
+    _product = MiniProductOut.model_validate(product).model_dump()
+    _attributes = []
+
+    for attr in attributes:
+        obj = {"name": attr.attribute.name}
+        form_type = attr.attribute.form_type.lower()
+        if form_type in ["text", "select", "radio"]:
+            obj["type"] = "text"
+            obj["value"] = attr.text_value
+        elif form_type == "boolean":
+            obj["type"] = "boolean"
+            obj["value"] = attr.boolean_value
+        elif form_type == "date":
+            obj["type"] = "date"
+            obj["value"] = attr.date_value
+        elif form_type == "multiple":
+            obj["type"] = "list"
+            obj["value"] = attr.json_value
+        elif form_type == "number":
+            obj["type"] = "number"
+            obj["value"] = attr.number_value
+        else:
+            continue
+
+        _attributes.append(obj)
+
+    _product['attributes'] = _attributes
+
+    return _product
