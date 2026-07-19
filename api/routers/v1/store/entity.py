@@ -10,6 +10,7 @@ from fastapi import (
     UploadFile,
     File,
 )
+from models.product import Product
 from libs.deps import get_store, get_user
 from models.db import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -132,8 +133,16 @@ async def delete_store_profile(
 ):
     now = datetime.now(timezone.utc)
     user = _store.user
+
     await db.execute(
-        update(Store).where(Store.id == _store.id).values(deleted=True, deleted_at=now)
+        update(Store)
+        .where(Store.id == _store.id)
+        .values(deleted=True, deleted_at=now, status=STORE_STATUS.DEACTIVATED)
+    )
+    await db.execute(
+        update(Product)
+        .where(Product.store_id == _store.id)
+        .values(deleted=True, deleted_at=now, available=False)
     )
     await redis.delete(f"store:{user.id}:{_store.slug}")
     return {"success": True, "date": _store.slug}  # return slug of the deleted account

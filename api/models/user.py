@@ -1,6 +1,8 @@
+import uuid
+
 from .db import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Integer, String, Boolean, ForeignKey, DateTime, Enum
+from sqlalchemy import UUID, Integer, String, Boolean, ForeignKey, DateTime, Enum
 from pydantic import EmailStr, HttpUrl
 from typing import TYPE_CHECKING, List, Optional
 from datetime import datetime
@@ -10,6 +12,7 @@ from schemas.store.entity import STORE_STATUS
 
 if TYPE_CHECKING:
     from .product import Product
+    from .shopping import Order, Wishlist
 
 
 class User(Base):
@@ -22,6 +25,9 @@ class User(Base):
     role: Mapped[ROLE] = mapped_column(Enum(ROLE), default=ROLE.USER)
     status: Mapped[STATUS] = mapped_column(Enum(STATUS), default=STATUS.ACTIVE)
     password: Mapped[str] = mapped_column(String, nullable=True)
+    orders: Mapped[List[Order]] = relationship(back_populates="user")
+    wishlists: Mapped[List[Wishlist]] = relationship(back_populates="user",  cascade="all, delete-orphan")  
+    addresses: Mapped[List[Address]] = relationship(back_populates="user", cascade="all, delete-orphan")
     sessions: Mapped[List["Session"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
@@ -36,7 +42,27 @@ class User(Base):
         DateTime(timezone=True), server_default=func.now()
     )
 
+class Address(Base):
+    __tablename__="addresses"
+    id: Mapped[int] = mapped_column(primary_key=True)
 
+    address_id: Mapped[uuid.UUID] = mapped_column(UUID, default=uuid.uuid4(), unique=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    user: Mapped[User] = relationship(back_populates="addresses")
+    state: Mapped[str] = mapped_column(String)
+    city: Mapped[str] = mapped_column(String)
+    landmark: Mapped[str]=mapped_column(String, nullable=True)
+    zip_code: Mapped[int] = mapped_column(Integer)
+    line_1:Mapped[str] = mapped_column(String)
+    line_2: Mapped[str] = mapped_column(String, nullable=True)
+    deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    
 class Session(Base):
     __tablename__ = "sessions"
 

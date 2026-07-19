@@ -1,6 +1,7 @@
 import re
 from typing import Literal, Optional, List
 from fastapi import APIRouter, Depends, Query, status, HTTPException, Header, Request
+from models.product import Product
 from models.user import Store
 from libs.deps import get_admin, get_superadmin
 from libs.redis import redis
@@ -36,7 +37,6 @@ async def get_all_store(
     result = await paginate(db, stmt)
     return result
 
-
 @router.get("/search", response_model=Page[MiniStoreOut])
 async def admin_search_product(
     admin: UserShema = Depends(get_admin),
@@ -67,7 +67,6 @@ async def admin_search_product(
 
     return result
 
-
 @router.get("/{slug}", response_model=StoreOut)
 async def get_all_store(
     slug: str, admin: UserShema = Depends(get_admin), db: AsyncSession = Depends(get_db)
@@ -86,7 +85,6 @@ async def get_all_store(
         )
 
     return result
-
 
 @router.post("/update-status")
 async def update_store_status(
@@ -115,15 +113,13 @@ async def update_store_status(
             detail="store owner account is not active",
         )
 
-    if store.status == STORE_STATUS.TERMINATED:
-        if admin.role == ROLE.SUPERADMIN:
-            store.status = body.status
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Only superadmin can restore terminated store",
-            )
+    if store.status == STORE_STATUS.TERMINATED and admin.role != ROLE.SUPERADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Only superadmin can restore terminated store",
+        )
 
     store.status = body.status
+
     await db.flush()
     return {"success": True, "data": store.status}

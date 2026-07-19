@@ -41,12 +41,12 @@ class StoreSchemaUpdate(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class BaseStoreSchemaOut(BaseStoreSchema):
-    #id removed from here
     slug: str
     status: STORE_STATUS
     model_config = ConfigDict(from_attributes=True)
 
 class StoreSchema(BaseStoreSchemaOut):
+    id: int
     user: UserShema
     model_config = ConfigDict(from_attributes=True)
     

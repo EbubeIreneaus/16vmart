@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import re
 from typing import Optional, List
 from fastapi_pagination import Page
@@ -158,21 +159,22 @@ async def create_product(
         )
 
 
-@router.patch("/image/{productId}")
+@router.patch("/image/{product_id}")
 async def update_product_image(
     request: Request,
     files: List[UploadFile],
     store_id: str,
-    productId: int,
+    product_id: str,
     store: StoreSchema = Depends(get_store),
     db: AsyncSession = Depends(get_db),
 ):
     try:
+        slug = product_id.lower().strip()
         product = await db.scalar(
             select(Product)
             .options(selectinload(Product.images))
             .where(
-                Product.id == productId,
+                func.lower(Product.slug) == slug,
                 Product.store_id == store.id,
                 Product.deleted == False,
             )
@@ -198,6 +200,8 @@ async def update_product_image(
                 product.images.append(ProductImages(name=name, src=res["secure_url"]))
 
                 urls.append({"src": res["secure_url"], "name": name})
+
+        await redis.delete(f"product:{slug}")
         return {"success": True, "data": urls}
 
     except HTTPException:
@@ -210,22 +214,23 @@ async def update_product_image(
         )
 
 
-@router.delete("/image/{name}/{productId}")
+@router.delete("/image/{name}/{product_id}")
 async def delete_product_image(
     request: Request,
-    productId: int,
+    product_id: str,
     store_id: str,
     name: str,
     store: StoreSchema = Depends(get_store),
     db: AsyncSession = Depends(get_db),
 ):
     try:
+        slug = product_id.lower().strip()
         image = await db.scalar(
             select(ProductImages)
             .options(
                 selectinload(ProductImages.product).options(selectinload(Product.store))
             )
-            .where(ProductImages.name == name, ProductImages.product_id == productId)
+            .where(ProductImages.name == name, func.lower(Product.slug) == slug)
         )
 
         if not image or image.product.store_id != store.id:
@@ -240,7 +245,7 @@ async def delete_product_image(
         )
 
         await db.delete(image)
-
+        await redis.delete(f"product:{slug}")
         return {"success": True}
     except HTTPException:
         raise
@@ -250,22 +255,22 @@ async def delete_product_image(
             detail="Unknown server error, try again later",
         )
 
-
-@router.patch("/{productId}")
+@router.patch("/{product_id}")
 async def edit_product(
     request: Request,
     store_id: str,
-    productId: int,
+    product_id: str,
     body: ProductSchemaUpdate,
     store: StoreSchema = Depends(get_store),
     db: AsyncSession = Depends(get_db),
 ):
     try:
+        slug = product_id.lower().strip()
         data = body.model_dump(exclude_unset=True)
         stmt = (
             update(Product)
             .where(
-                Product.id == productId,
+                func.lower(Product.slug) == slug,
                 Product.store_id == store.id,
                 Product.deleted == False,
             )
@@ -273,6 +278,7 @@ async def edit_product(
         )
         result = await db.execute(stmt)
         await db.flush()
+        await redis.delete(f"product:{slug}")
         return {"data": result}
     except HTTPException:
         raise
@@ -282,9 +288,32 @@ async def edit_product(
             detail="Unknown server error, try again later",
         )
 
+@router.delete("/{product_id}")
+async def delete_product(
+    request: Request,
+    store_id: str,
+    product_id: str,
+    store: StoreSchema = Depends(get_store),
+    db: AsyncSession = Depends(get_db),
+):
+    slug = product_id.lower().strip()
+    now = datetime.now(timezone.utc)
+    stmt = (
+        update(Product)
+        .where(
+            func.lower(Product.slug) == slug,
+            Product.store_id == store.id,
+            Product.deleted == False,
+        )
+        .values(deleted=True, deleted_at=now, available=False)
+    )
+    await db.execute(stmt)
+    await redis.delete(f"product:{slug}")
+
+    return {"success": True}
 
 @router.get("/all", response_model=Page[MiniProductOut])
-async def create_product(
+async def get_all_product(
     request: Request,
     store_id: str,
     store: StoreSchema = Depends(get_store),
@@ -305,7 +334,6 @@ async def create_product(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unknown server error, try again later",
         )
-
 
 @router.get("/search", response_model=Page[MiniProductOut])
 async def store_search_product(
@@ -399,6 +427,6 @@ async def store_get_single_product(
 
         _attributes.append(obj)
 
-    _product['attributes'] = _attributes
+    _product["attributes"] = _attributes
 
     return _product

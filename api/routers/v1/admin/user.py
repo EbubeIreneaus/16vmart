@@ -56,7 +56,6 @@ async def get_all_users(
         )
     return result
 
-
 @router.post("/change-status")
 async def get_all_users(
     body: StatusIn,

@@ -66,6 +66,9 @@ async def search_product(
 @router.get("/{slug}", response_model=ProductResponse)
 async def get_single_product(slug: str, db: AsyncSession = Depends(get_db)):
     _slug = slug.lower().strip()
+    cache = await redis.get(f"product:{_slug}")
+    if cache:
+        return ProductResponse.model_validate_json(cache)
     stmt = (
         select(Product)
         .options(
@@ -118,6 +121,9 @@ async def get_single_product(slug: str, db: AsyncSession = Depends(get_db)):
 
     _product["attributes"] = _attributes
     _product["category"] = category
+
+    json_string = ProductResponse.model_validate(_product).model_dump_json()
+    await redis.set(f"product:{_slug}", json_string, ex=86400)
     return _product
 
 

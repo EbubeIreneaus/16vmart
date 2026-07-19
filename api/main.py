@@ -1,6 +1,9 @@
 from fastapi import FastAPI, Depends
 from routers.v1 import cat, product
 from routers.v1 import auth
+from routers.v1 import wishlist
+from routers.v1 import order
+from routers.v1 import cart
 from routers.v1.store.index import router as StoreRouter
 from routers.v1.admin.index import router as AdminRouter
 from slowapi import _rate_limit_exceeded_handler
@@ -18,4 +21,7 @@ app.include_router(AdminRouter, prefix="/api")
 app.include_router(cat.router, prefix="/api") #category
 app.include_router(StoreRouter, prefix="/api")
 app.include_router(product.router, prefix="/api")
+app.include_router(cart.router, prefix="/api")
+app.include_router(wishlist.router, prefix="/api")
+app.include_router(order.router, prefix="/api")
 
