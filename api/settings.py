@@ -22,6 +22,8 @@ class Setting(BaseSettings):
     CLOUDINARY_KEY: str
     IMAGE_FOLDER: str = "16vmart"
 
+    STRIPE_SECRET: str
+
     class Config:
         env_file = ".env"
 

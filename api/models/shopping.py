@@ -50,7 +50,7 @@ class Order(Base):
     idompotent_key: Mapped[uuid.UUID] = mapped_column(UUID, unique=True, index=True)
 
     items: Mapped[List[OrderProduct]] = relationship(back_populates="order", cascade="all, delete-orphan")
-    deleivery_address: Mapped[Address] = relationship()
+    delivery_address: Mapped[Address] = relationship()
     delivery_addr_id: Mapped[int] = mapped_column(ForeignKey("addresses.address_id"))
     status: Mapped[ORDER_STATUS] = mapped_column(Enum(ORDER_STATUS), default=ORDER_STATUS.PENDING)
     paid: Mapped[bool] = mapped_column(Boolean, default=False)

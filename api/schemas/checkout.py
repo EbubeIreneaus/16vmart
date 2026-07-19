@@ -17,10 +17,3 @@ class CheckoutIn(BaseModel):
     items: List[CartItem]
     delivery_address: uuid.UUID | AddressInSchema
 
-class BaseOrderMini(BaseModel):
-    order_number: str
-    idompotent_key: uuid.UUID
-    status: ORDER_STATUS
-    paid_at: Optional[datetime]
-    paid: bool
-    created_at: datetime
