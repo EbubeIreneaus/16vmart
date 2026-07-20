@@ -44,7 +44,7 @@ from libs.cloudinary import cloudinary, cloudinary_uploader
 import asyncio
 from settings import setting
 
-router = APIRouter(prefix="/{store_id}/products", tags=["Stores", "Products"])
+router = APIRouter(prefix="/{store_id}/products")
 
 
 @router.post("/")

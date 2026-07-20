@@ -18,10 +18,11 @@ from libs.deps import get_db, get_user
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.user import Address
 from schemas.user import BaseAddress, AddressInSchema, AddressOutschema, UserShema
-
+from libs.limiter import limiter
 router = APIRouter(prefix="/user", tags=["User"])
 
 @router.post("/create-address")
+@limiter.limit("20/hour", error_message="Too many request, try again later")
 async def create_address(
     request: Request,
     body: AddressInSchema,
@@ -72,7 +73,7 @@ async def get_address(
 )-> AddressOutschema:
     address =  await db.scalar(
         select(Address)
-        .where(Address.user_id == user.id,Address.address_id==address_id, Address.deleted_at==False)
+        .where(Address.user_id == user.id,Address.address_id==address_id, Address.deleted==False)
     )
     if not address:
         raise HTTPException(
@@ -81,4 +82,3 @@ async def get_address(
         )
 
     return address
-

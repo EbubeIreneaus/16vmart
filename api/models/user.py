@@ -2,7 +2,7 @@ import uuid
 
 from .db import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import UUID, Integer, String, Boolean, ForeignKey, DateTime, Enum
+from sqlalchemy import UUID, Integer, String, Boolean, ForeignKey, DateTime, Enum, Text
 from pydantic import EmailStr, HttpUrl
 from typing import TYPE_CHECKING, List, Optional
 from datetime import datetime
@@ -12,7 +12,7 @@ from schemas.store.entity import STORE_STATUS
 
 if TYPE_CHECKING:
     from .product import Product
-    from .shopping import Order, Wishlist
+    from .shopping import Order, Wishlist, VendorOrder
 
 
 class User(Base):
@@ -34,6 +34,7 @@ class User(Base):
     stores: Mapped[List[Store]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+
     deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
@@ -96,6 +97,7 @@ class Store(Base):
     address: Mapped[str] = mapped_column(String)
     industry: Mapped[str] = mapped_column(String)
     email: Mapped[EmailStr] = mapped_column(String)
+    vendors_orders: Mapped[List[VendorOrder]] = relationship(back_populates="store")
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     status: Mapped[STORE_STATUS] = mapped_column(Enum(STORE_STATUS), default=STORE_STATUS.ACTIVE)
     products: Mapped[List[Product]] = relationship(back_populates="store", cascade="all, delete-orphan")

@@ -18,7 +18,7 @@ from sqlalchemy.orm import selectinload
 from libs.limiter import limiter
 from libs.redis import redis
 
-router = APIRouter(prefix="/{store_id}/cat", tags=["Stores", "Category"])
+router = APIRouter(prefix="/{store_id}/cat")
 
 
 @router.get("/all", response_model=List[CategoryResp])

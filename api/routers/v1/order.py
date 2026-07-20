@@ -7,7 +7,7 @@ from models.user import Store
 from libs.deps import get_user
 from schemas.user import UserShema
 from schemas.store.entity import STORE_STATUS
-from schemas.shopping import BaseOrderMini, SingleOrderOut
+from schemas.shopping import ORDER_STATUS, BaseOrderMini, SingleOrderOut
 from schemas.checkout import CheckoutIn
 from models.shopping import Order, OrderProduct
 from models.product import Product
@@ -23,10 +23,13 @@ from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 import stripe
 from settings import setting
+from bg_task.config import get_arq_pool
+
 
 router = APIRouter(prefix="/shopping", tags=["Checkout"])
 
 client = stripe.StripeClient(setting.STRIPE_SECRET)
+
 
 @router.post("/checkout")
 async def checkout(
@@ -34,8 +37,7 @@ async def checkout(
     body: CheckoutIn,
     user: UserShema = Depends(get_user),
     db: AsyncSession = Depends(get_db),
-) -> BaseOrderMini:
-
+):
     if len(body.items) < 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -71,6 +73,7 @@ async def checkout(
     ).all()
 
     key_value = {p.slug.lower(): p for p in products}
+
     cart = [
         OrderProduct(
             product_id=key_value[item.product_id.lower()].id,
@@ -86,7 +89,7 @@ async def checkout(
         date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
         random_digits = secrets.randbelow(900000) + 100000
         order_number = f"ORD-{date_str}-{random_digits}"
-        z = await db.scalar(select(Order).where(order_number == order_number))
+        z = await db.scalar(select(Order).where(Order.order_number == order_number))
         if not z:
             break
 
@@ -112,9 +115,8 @@ async def checkout(
 
     db.add(order)
     await db.flush()
-
-    return order
-
+    stripe_session = await stripe_checkout(order, user)
+    return {"success": True, "url": stripe_session.url}
 
 @router.get("/orders")
 async def get_orders(
@@ -125,6 +127,7 @@ async def get_orders(
     orders = await db.scalars(select(Order).where(Order.user_id == user.id))
 
     return orders.all()
+
 
 @router.get("/order/{order_number}")
 async def get_orders(
@@ -139,9 +142,9 @@ async def get_orders(
         .join(Order.items)
         .options(
             selectinload(Order.delivery_address),
-            selectinload(Order.items).options(selectinload(OrderProduct.product).options(
-                selectinload(Product.images)
-            )),
+            selectinload(Order.items).options(
+                selectinload(OrderProduct.product).options(selectinload(Product.images))
+            ),
         )
         .where(Order.order_number == order_number, Order.user_id == user.id)
     )
@@ -151,5 +154,65 @@ async def get_orders(
 
     return order
 
-def stripe_checkout():
-    pass
+
+async def stripe_checkout(order: SingleOrderOut, user: UserShema):
+    items = order.items
+    line_item = [
+        {
+            "price_data": {
+                "currency": "usd",
+                "unit_amount": int(item.unit_price * 100),
+                "product_data": {"name": item.product.name},
+            },
+            "quantity": item.quantity,
+        }
+        for item in items
+    ]
+    try:
+        session = await client.v1.checkout.sessions.create_async(
+            params={
+                "line_items": line_item,
+                "mode": "payment",
+                "currency": "usd",
+                "customer_creation": "if_required",
+                "client_reference_id": order.order_number,
+                "cancel_url": "https://example.com/cancel",
+                "success_url": "https://example.com/success",
+                "customer_email": user.email,
+                "metadata": {"customer_fullname": user.fullname},
+            },
+            options={"idempotency_key": str(order.idompotent_key)},
+        )
+        return session
+    except stripe.error.StripeError as e:
+        raise HTTPException(
+            status.HTTP_424_FAILED_DEPENDENCY,
+            detail="stripe payment error"
+        )
+
+@router.post("/stripe-webhook")
+async def stripe_webhook(request: Request):
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, setting.STRIPE_HOOK_SECRET)
+    except (ValueError, stripe.error.SignatureVerificationError):
+        raise HTTPException(status_code=400, detail="Invalid signature")
+    
+    arq = await get_arq_pool()
+
+    match event["type"]:
+        case "checkout.session.completed":
+            session = event["data"]["object"]
+            order_number = session["client_reference_id"]
+            await arq.enqueue_job("update_order", ORDER_STATUS.PROCESSING, order_number)
+        case "checkout.session.expired":
+            session = event["data"]["object"]
+            order_number = session["client_reference_id"]
+            await arq.enqueue_job("update_order", ORDER_STATUS.CANCELLED, order_number)
+        case "charge.refunded":
+            pass
+        case "charge.dispute.created":
+            pass
+    return {"received": True}

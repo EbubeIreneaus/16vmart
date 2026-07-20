@@ -34,6 +34,7 @@ class BaseOrderMini(BaseModel):
 class OrderProduct(BaseModel):
     product: MiniProductResponse
     quantity: int = 1
+    unit_price: Decimal
 
 class SingleOrderOut(BaseOrderMini):
     delivery_address: AddressOutschema

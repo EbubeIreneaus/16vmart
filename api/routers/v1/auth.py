@@ -1,3 +1,5 @@
+import json
+
 from fastapi import (
     APIRouter,
     HTTPException,
@@ -9,14 +11,25 @@ from fastapi import (
     Cookie,
 )
 from fastapi.security import OAuth2PasswordBearer
+from pydantic import EmailStr
+from api.libs.deps import get_user
 from libs.jwt import encode, decode
 from libs.redis import redis
 from pwdlib import PasswordHash
 from models.db import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
-from schemas.user import RegisterSchema, LoginSchema, STATUS, SessionUserSchema
+from schemas.user import (
+    ChangePassIn,
+    RegisterSchema,
+    LoginSchema,
+    STATUS,
+    ResetLinkIn,
+    ResetPassIn,
+    SessionUserSchema,
+    UserShema,
+)
 from models.user import User as UserModel, Session as SessionModel
-from sqlalchemy import select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import selectinload
 import secrets
 import hashlib
@@ -244,8 +257,10 @@ async def refresh_token(
             status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Invalid request"
         )
     hashed_refresh_token = hashlib.sha256(refresh_token.encode()).hexdigest()
-    stmt = select(SessionModel).options(selectinload(SessionModel.user)).where(
-        SessionModel.refresh_token_hash == hashed_refresh_token
+    stmt = (
+        select(SessionModel)
+        .options(selectinload(SessionModel.user))
+        .where(SessionModel.refresh_token_hash == hashed_refresh_token)
     )
     session = await db.scalar(stmt)
 
@@ -303,4 +318,112 @@ async def refresh_token(
     except:
         pass
 
+    return {"success": True}
+
+
+@router.post("/change-password")
+@limiter.limit("20/hour", error_message="Too many attempt, try again later")
+async def update_password(
+    request: Request,
+    body: ChangePassIn,
+    _user: UserShema = Depends(get_user),
+    db: AsyncSession = Depends(get_db),
+):
+    user = await db.scalar(select(UserModel).where(UserModel.id == _user.id))
+    current_hashed = user.password
+
+    if not password_hash.verify(body.current, current_hashed):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Incorrect password"
+        )
+    hashed_pass = password_hash.hash(body.new_password)
+    user.password = hashed_pass
+    return {"success": True}
+
+@router.post("/send-reset-link")
+@limiter.limit("5/minute", error_message="Too many request, try again later")
+@limiter.limit("50/day", error_message="Too many attempt, try again after 24 hours")
+async def send_reset_link(
+    request: Request,
+    body: ResetLinkIn,
+    x_forwarded_for: Annotated[str | None, Header()] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    email = body.email
+    user = await db.scalar(
+        select(UserModel).where(func.lower(UserModel.email) == email.lower())
+    )
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="User does not exist"
+        )
+    key_url = secrets.token_urlsafe(8)
+    long_url = secrets.token_urlsafe(32)
+    url = f"{key_url}-16vmart-{long_url}"
+    obj = {
+        "email": email,
+        "ip": x_forwarded_for if x_forwarded_for else request.client.host,
+    }
+    json_obj = json.dumps(obj)
+    await redis.set(f"passwordReset:{key_url}", json_obj, ex=3600)
+    # send long url to email
+
+    return {"success": True}
+
+@router.post("/validate-reset-link")
+@limiter.limit("100/hour", error_message="Too many attempt, try again after 24 hours")
+async def validate_reset_link(
+    request: Request,
+    q: str,
+    x_forwarded_for: Annotated[str | None, Header()] = None,
+):
+    key_url = q.split("-16vmart-")[0]
+    result = await redis.get(f"passwordReset:{key_url}")
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Expired or invalid reset token",
+        )
+
+    data = json.loads(result)
+    ip = data["ip"]
+    current_ip = x_forwarded_for if x_forwarded_for else request.client.host
+    if ip != current_ip:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Mismatch ip address"
+        )
+    
+    return {"success": True}
+
+@router.post("/reset-password")
+@limiter.limit("100/hour", error_message="Too many attempt, try again after 24 hours")
+async def validate_reset_link(
+    request: Request,
+    body: ResetPassIn,
+    x_forwarded_for: Annotated[str | None, Header()] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    token = body.token
+    key_url = token.split("-16vmart-")[0]
+    result = await redis.get(f"passwordReset:{key_url}")
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset link",
+        )
+    data = json.loads(result)
+    ip = data["ip"]
+    current_ip = x_forwarded_for if x_forwarded_for else request.client.host
+
+    if ip != current_ip:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Mismatch ip address"
+        )
+    email = data["email"]
+    hashed_password = password_hash.hash(body.new_password)
+    await db.execute(
+        update(UserModel)
+        .where(UserModel.email == email)
+        .values(password=hashed_password)
+    )
     return {"success": True}

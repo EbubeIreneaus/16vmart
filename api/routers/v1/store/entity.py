@@ -14,10 +14,11 @@ from models.product import Product
 from libs.deps import get_store, get_user
 from models.db import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import or_, select, update, delete
-from datetime import datetime, timezone, timedelta
+from sqlalchemy import or_, select, update
+from datetime import datetime, timezone
 from schemas.user import UserShema, ROLE
 from schemas.store.entity import (
+    BaseStoreSchemaOut,
     StoreSchema,
     StoreSchemaIn,
     StoreSchemaUpdate,
@@ -25,16 +26,12 @@ from schemas.store.entity import (
 )
 from models.user import Store, User
 from sqlalchemy import func
-from sqlalchemy.exc import NoResultFound
-from sqlalchemy.orm import selectinload
 from libs.limiter import limiter
 from libs.redis import redis
 from libs.cloudinary import cloudinary, cloudinary_uploader
 import asyncio
-from settings import setting
 
-router = APIRouter(prefix="/entity", tags=["Stores", "Products"])
-
+router = APIRouter(prefix="/entity")
 
 @router.post("")
 async def create_store_profile(
@@ -84,7 +81,6 @@ async def create_store_profile(
             detail="Server error, please try again later",
         )
 
-
 @router.patch("/logo/{store_id}")
 async def update_business_logo(
     request: Request,
@@ -106,7 +102,6 @@ async def update_business_logo(
         detail="third party service unavailable",
     )
 
-
 @router.patch("/{store_id}")
 async def update_store_profile(
     request: Request,
@@ -121,7 +116,6 @@ async def update_store_profile(
         .values(**body.model_dump(exclude_unset=True))
     )
     return {"success": True}
-
 
 @router.delete("/{store_id}")
 async def delete_store_profile(
@@ -146,3 +140,23 @@ async def delete_store_profile(
     )
     await redis.delete(f"store:{user.id}:{_store.slug}")
     return {"success": True, "date": _store.slug}  # return slug of the deleted account
+
+@router.get('')
+async def get_my_stores(
+    request: Request,
+    user: UserShema = Depends(get_user),
+    db: AsyncSession = Depends(get_db),
+) -> List[BaseStoreSchemaOut]:
+    stmt = select(Store).where(Store.user_id == user.id, Store.deleted==False)
+    results = await db.scalars(stmt)
+
+    return results.all()
+
+@router.get('/{store_id}')
+async def get_my_stores(
+    request: Request,
+    store_id: str,
+    store: StoreSchema = Depends(get_store),
+    db: AsyncSession = Depends(get_db),
+) -> BaseStoreSchemaOut:
+    return store

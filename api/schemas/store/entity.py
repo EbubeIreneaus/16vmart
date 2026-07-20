@@ -46,7 +46,7 @@ class BaseStoreSchemaOut(BaseStoreSchema):
     model_config = ConfigDict(from_attributes=True)
 
 class StoreSchema(BaseStoreSchemaOut):
-    id: int
+    # I removed id here (just incase of error)
     user: UserShema
     model_config = ConfigDict(from_attributes=True)
     

@@ -9,7 +9,7 @@ from routers.v1.admin.index import router as AdminRouter
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from fastapi_pagination import add_pagination
- 
+
 
 app = FastAPI()
 

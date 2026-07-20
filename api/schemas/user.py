@@ -41,7 +41,6 @@ class SessionUserSchema(SessionSchema):
     
     model_config = ConfigDict(from_attributes=True)
     
-
 class RegisterSchema(BaseModel):
     fullname: str = Field(description="User fullname", min_length=3)
     email: EmailStr = Field(description="Email address")
@@ -52,6 +51,17 @@ class RegisterSchema(BaseModel):
 class LoginSchema(BaseModel):
     email: EmailStr = Field(description="Email address")
     password: str = Field(min_length=6, description="Password (min-length: 6)")
+
+class ChangePassIn(BaseModel):
+    current: str = Field(min_length=6)
+    new_password: str = Field(min_length=6)
+
+class ResetPassIn(BaseModel):
+    new_password: str = Field(min_length=6)
+    token: str
+
+class ResetLinkIn(BaseModel):
+    email: EmailStr
 
 class BaseAddress(BaseModel):
     state: str

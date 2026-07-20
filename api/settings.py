@@ -23,6 +23,7 @@ class Setting(BaseSettings):
     IMAGE_FOLDER: str = "16vmart"
 
     STRIPE_SECRET: str
+    STRIPE_HOOK_SECRET: str
 
     class Config:
         env_file = ".env"

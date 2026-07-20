@@ -24,6 +24,7 @@ from pydantic import HttpUrl
 
 if TYPE_CHECKING:
     from .user import Store
+    from .shopping import VendorOrder
 
 class Product(Base):
     __tablename__ = "products"
