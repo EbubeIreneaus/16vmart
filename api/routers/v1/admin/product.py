@@ -19,7 +19,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import selectinload
 from libs.limiter import limiter
 
-router = APIRouter(prefix="/products", tags=["Admin", "Products"])
+router = APIRouter(prefix="/products")
 c_router = APIRouter(prefix="/cat", tags=["Admin", "Categories"])
 
 

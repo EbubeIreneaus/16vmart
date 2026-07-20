@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.user import Address
 from schemas.user import BaseAddress, AddressInSchema, AddressOutschema, UserShema
 from libs.limiter import limiter
-router = APIRouter(prefix="/user", tags=["User"])
+router = APIRouter(prefix="/user")
 
 @router.post("/create-address")
 @limiter.limit("20/hour", error_message="Too many request, try again later")

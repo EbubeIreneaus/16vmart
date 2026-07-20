@@ -17,7 +17,7 @@ from libs.limiter import limiter
 from fastapi_pagination.ext.sqlalchemy import paginate
 from fastapi_pagination import Page
 
-router = APIRouter(prefix="/stores", tags=["Admin", "User"])
+router = APIRouter(prefix="/stores")
 
 
 @router.get("/all", response_model=Page[MiniStoreOut])

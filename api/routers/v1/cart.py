@@ -16,7 +16,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 from libs.redis import redis
 
-router = APIRouter(prefix="/carts", tags=["Cart"])
+router = APIRouter(prefix="/carts")
 
 CartInList = TypeAdapter(List[CartIn])
 

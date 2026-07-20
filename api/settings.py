@@ -25,6 +25,8 @@ class Setting(BaseSettings):
     STRIPE_SECRET: str
     STRIPE_HOOK_SECRET: str
 
+    APP_URL: str
+
     class Config:
         env_file = ".env"
 

@@ -21,7 +21,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import selectinload
 from libs.redis import redis
 
-router = APIRouter(prefix="/cat", tags=["Categories"])  # category router
+router = APIRouter(prefix="/cat")  # category router
 
 
 @router.get("/all", response_model=List[CategorySchemaResponse])

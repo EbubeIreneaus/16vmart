@@ -26,7 +26,7 @@ from settings import setting
 from bg_task.config import get_arq_pool
 
 
-router = APIRouter(prefix="/shopping", tags=["Checkout"])
+router = APIRouter(prefix="/shopping")
 
 client = stripe.StripeClient(setting.STRIPE_SECRET)
 
@@ -190,7 +190,7 @@ async def stripe_checkout(order: SingleOrderOut, user: UserShema):
             detail="stripe payment error"
         )
 
-@router.post("/stripe-webhook")
+@router.post("/stripe-webhook", include_in_schema=False)
 async def stripe_webhook(request: Request):
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature")

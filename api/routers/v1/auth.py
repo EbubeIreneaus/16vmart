@@ -12,7 +12,7 @@ from fastapi import (
 )
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import EmailStr
-from api.libs.deps import get_user
+from libs.deps import get_user
 from libs.jwt import encode, decode
 from libs.redis import redis
 from pwdlib import PasswordHash
@@ -37,8 +37,11 @@ from datetime import datetime, timezone, timedelta
 from typing import Annotated
 from bg_task.config import get_arq_pool
 from libs.limiter import limiter
+from libs.mail_config import conf
+from fastapi_mail import MessageSchema, MessageType, FastMail
+from settings import setting
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+router = APIRouter(prefix="/auth")
 
 ACCESS_TOKEN_EXP = 6000
 REFRESH_TOKEN_EXP = 30
@@ -329,7 +332,11 @@ async def update_password(
     _user: UserShema = Depends(get_user),
     db: AsyncSession = Depends(get_db),
 ):
-    user = await db.scalar(select(UserModel).where(UserModel.id == _user.id))
+    user = await db.scalar(
+        select(UserModel)
+        .options(selectinload(UserModel.sessions))
+        .where(UserModel.id == _user.id)
+    )
     current_hashed = user.password
 
     if not password_hash.verify(body.current, current_hashed):
@@ -338,7 +345,9 @@ async def update_password(
         )
     hashed_pass = password_hash.hash(body.new_password)
     user.password = hashed_pass
+    user.sessions.clear()
     return {"success": True}
+
 
 @router.post("/send-reset-link")
 @limiter.limit("5/minute", error_message="Too many request, try again later")
@@ -359,41 +368,54 @@ async def send_reset_link(
         )
     key_url = secrets.token_urlsafe(8)
     long_url = secrets.token_urlsafe(32)
-    url = f"{key_url}-16vmart-{long_url}"
-    obj = {
-        "email": email,
-        "ip": x_forwarded_for if x_forwarded_for else request.client.host,
-    }
+    url = f"{setting.APP_URL}/auth/reset/{key_url}-16vmart-{long_url}"
+    obj = {"email": email, "key": long_url}
     json_obj = json.dumps(obj)
-    await redis.set(f"passwordReset:{key_url}", json_obj, ex=3600)
+    ip = x_forwarded_for if x_forwarded_for else request.client.host
+    await redis.set(f"passwordReset:{ip}:{key_url}", json_obj, ex=3600)
+    print(url)
     # send long url to email
-
+    message = MessageSchema(
+        subject="Password Reset Link",
+        recipients=[email],
+        template_body={"url": url},
+        subtype=MessageType.html,
+    )
+    fm = FastMail(conf)
+    await fm.send_message(message, template_name="reset_password.html")
     return {"success": True}
 
-@router.post("/validate-reset-link")
+
+@router.get("/validate-reset-link")
 @limiter.limit("100/hour", error_message="Too many attempt, try again after 24 hours")
 async def validate_reset_link(
     request: Request,
     q: str,
     x_forwarded_for: Annotated[str | None, Header()] = None,
 ):
-    key_url = q.split("-16vmart-")[0]
-    result = await redis.get(f"passwordReset:{key_url}")
+    _q = q.split("-16vmart-")
+    key_url = _q[0]
+    long_url = _q[1]
+    ip = x_forwarded_for if x_forwarded_for else request.client.host
+
+    result = await redis.get(f"passwordReset:{ip}:{key_url}")
     if not result:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Expired or invalid reset token",
+            detail="Expired or invalid reset token, it could be that you are on a diffrent device with different ip address",
         )
 
     data = json.loads(result)
-    ip = data["ip"]
-    current_ip = x_forwarded_for if x_forwarded_for else request.client.host
-    if ip != current_ip:
+    key = data["key"]
+
+    if long_url != key:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Mismatch ip address"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid password reset link",
         )
-    
+
     return {"success": True}
+
 
 @router.post("/reset-password")
 @limiter.limit("100/hour", error_message="Too many attempt, try again after 24 hours")
@@ -403,27 +425,33 @@ async def validate_reset_link(
     x_forwarded_for: Annotated[str | None, Header()] = None,
     db: AsyncSession = Depends(get_db),
 ):
-    token = body.token
-    key_url = token.split("-16vmart-")[0]
-    result = await redis.get(f"passwordReset:{key_url}")
+    token = body.token.split("-16vmart-")
+    key_url = token[0]
+    long_url = token[1]
+    ip = x_forwarded_for if x_forwarded_for else request.client.host
+
+    result = await redis.get(f"passwordReset:{ip}:{key_url}")
+
     if not result:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired reset link",
+            detail="Expired or invalid reset token, it could be that you are on a diffrent device with different ip address",
         )
     data = json.loads(result)
-    ip = data["ip"]
-    current_ip = x_forwarded_for if x_forwarded_for else request.client.host
+    key = data["key"]
 
-    if ip != current_ip:
+    if key != long_url:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Mismatch ip address"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset link"
         )
+
     email = data["email"]
     hashed_password = password_hash.hash(body.new_password)
+
     await db.execute(
         update(UserModel)
         .where(UserModel.email == email)
         .values(password=hashed_password)
     )
+    await redis.delete(f"passwordReset:{ip}:{key_url}")
     return {"success": True}

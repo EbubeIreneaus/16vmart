@@ -17,7 +17,7 @@ from sqlalchemy import func
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 
-router = APIRouter(prefix="/wishlists", tags=["Wishlist"])
+router = APIRouter(prefix="/wishlists")
 
 
 @router.post("")

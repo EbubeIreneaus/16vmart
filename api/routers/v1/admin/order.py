@@ -26,7 +26,7 @@ from settings import setting
 from bg_task.config import get_arq_pool
 
 
-router = APIRouter(prefix="/orders", tags=["Admin"])
+router = APIRouter(prefix="/orders")
 
 
 @router.patch("/status/{order_number}")

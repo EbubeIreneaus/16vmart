@@ -15,7 +15,7 @@ from libs.redis import redis
 from fastapi_pagination import Page
 from fastapi_pagination.ext.sqlalchemy import paginate
 
-router = APIRouter(prefix="/products", tags=["Products"])
+router = APIRouter(prefix="/products")
 
 
 @router.get("/feature", response_model=Page[MiniProductResponse])
