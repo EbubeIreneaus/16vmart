@@ -81,7 +81,7 @@ async def create_store_profile(
             detail="Server error, please try again later",
         )
 
-@router.patch("/logo/{store_id}")
+@router.patch("/{store_id}/logo")
 async def update_business_logo(
     request: Request,
     logo: UploadFile,
