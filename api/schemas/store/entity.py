@@ -14,7 +14,6 @@ class STORE_STATUS(Enum):
     DEACTIVATED = "deactivated"
 
 
-
 class BaseStoreSchema(BaseModel):
     logo: Optional[str] = Field(default=None)
     phone: str
@@ -48,5 +47,9 @@ class BaseStoreSchemaOut(BaseStoreSchema):
 class StoreSchema(BaseStoreSchemaOut):
     # I removed id here (just incase of error)
     user: UserShema
+    model_config = ConfigDict(from_attributes=True)
+
+class InternalStoreSchema(StoreSchema):
+    id: int
     model_config = ConfigDict(from_attributes=True)
     

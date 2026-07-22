@@ -9,7 +9,7 @@ class Setting(BaseSettings):
     REDIS_PASS: str
 
     MAIL_USER: str
-    MAIL_HOST: str
+    MAIL_HOST: str 
     MAIL_PORT: int = 465
     MAIL_PASS: str
     MAIL_SSL_TLS: bool = True

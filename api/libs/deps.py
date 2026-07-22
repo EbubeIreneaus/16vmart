@@ -4,7 +4,7 @@ from models.db import get_db
 from models.db import get_db
 from models.user import User, Session, Store
 from schemas.user import UserShema, STATUS, ROLE, SessionUserSchema
-from schemas.store.entity import STORE_STATUS, BaseStoreSchemaOut, StoreSchema
+from schemas.store.entity import STORE_STATUS, BaseStoreSchemaOut, StoreSchema, InternalStoreSchema
 from typing import Annotated, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from .jwt import decode
@@ -69,7 +69,7 @@ async def get_user(
 async def get_store(
     store_id: str,
     user: UserShema = Depends(get_user), db: AsyncSession = Depends(get_db)
-) -> StoreSchema:
+) -> InternalStoreSchema:
 
     if user.role != ROLE.SELLER:
         raise HTTPException(
@@ -80,7 +80,7 @@ async def get_store(
     redis_res = await redis.get(f"store:{user.id}:{slug}")
 
     if redis_res:
-        return StoreSchema.model_validate_json(redis_res)
+        return InternalStoreSchema.model_validate_json(redis_res)
 
     store = await db.scalar(
         select(Store)
@@ -99,9 +99,11 @@ async def get_store(
             detail=f"This store is {store.status}, contact support for more info",
         )
 
+    store_id = store.id
     store_dict = BaseStoreSchemaOut.model_validate(store).model_dump()
     store_dict['user'] = user
-    final_store = StoreSchema.model_validate(store_dict)
+    store_dict['id'] = store_id
+    final_store = InternalStoreSchema.model_validate(store_dict)
 
     await redis.set(f"store:{user.id}:{slug}", final_store.model_dump_json(), ex=3600)
     return final_store

@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import FormErrorLabel from "~/components/FormErrorLabel.vue";
 import type { Store } from "~/types/api";
+import { INDUSTRY_CHOICES } from "~/lib/industries";
+
 const { form } = useForm({
   name: "",
   industry: "",
@@ -9,10 +12,33 @@ const { form } = useForm({
   city: "",
   address: "",
 });
-const { fields, message: errorMessage, setError } = useGetAPIFormError();
+const {
+  fields: errorFields,
+  message: errorMessage,
+  setError,
+} = useGetAPIFormError();
+const isLoading = ref(false);
+const config = useRuntimeConfig();
+const access_token = useCookie("access_token").value;
+
 async function createStore() {
+  isLoading.value = true;
+  setError("");
   try {
-  } catch (error) {}
+    const res = await $fetch(`${config.public.apiUrl}/store/entity`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${access_token}`,
+      },
+      body: form.value,
+    });
+    await navigateTo("/vendor");
+  } catch (error: any) {
+    setError(error);
+  } finally {
+    isLoading.value = false;
+  }
 }
 </script>
 <template>
@@ -44,14 +70,33 @@ async function createStore() {
             v-model.trim="form.name"
             required
             class="mt-2 w-full rounded-lg border border-slate-300 p-3"
-            placeholder="e.g. Atlas Lifestyle" /></label
+            placeholder="e.g. Atlas Lifestyle"
+          />
+          <FormErrorLabel
+            :message="errorFields.name"
+            v-if="errorFields.name"
+          /> </label
         ><label class="text-sm font-bold"
-          >Industry<input
+          >Industry<select
             v-model.trim="form.industry"
             required
             class="mt-2 w-full rounded-lg border border-slate-300 p-3"
             placeholder="e.g. Fashion & accessories"
-        /></label>
+          >
+            <option value="">Select industry</option>
+            <option
+              v-for="industry in INDUSTRY_CHOICES"
+              :key="industry"
+              :value="industry"
+            >
+              {{ industry }}
+            </option>
+          </select>
+          <FormErrorLabel
+            :message="errorFields.industry"
+            v-if="errorFields.industry"
+          />
+        </label>
       </div>
       <div class="grid gap-5 md:grid-cols-2">
         <label class="text-sm font-bold"
@@ -59,14 +104,26 @@ async function createStore() {
             v-model.trim="form.email"
             required
             type="email"
-            class="mt-2 w-full rounded-lg border border-slate-300 p-3" /></label
-        ><label class="text-sm font-bold"
+            class="mt-2 w-full rounded-lg border border-slate-300 p-3"
+          />
+          <FormErrorLabel
+            :message="errorFields.email"
+            v-if="errorFields.email"
+          />
+        </label>
+
+        <label class="text-sm font-bold"
           >Phone number<input
             v-model.trim="form.phone"
             required
             class="mt-2 w-full rounded-lg border border-slate-300 p-3"
             placeholder="+234..."
-        /></label>
+          />
+          <FormErrorLabel
+            :message="errorFields.phone"
+            v-if="errorFields.phone"
+          />
+        </label>
       </div>
       <div class="grid gap-5 md:grid-cols-2">
         <label class="text-sm font-bold"
@@ -74,20 +131,34 @@ async function createStore() {
             v-model.trim="form.state"
             required
             class="mt-2 w-full rounded-lg border border-slate-300 p-3"
-            placeholder="Lagos" /></label
-        ><label class="text-sm font-bold"
+            placeholder="Lagos"
+          />
+          <FormErrorLabel
+            :message="errorFields.state"
+            v-if="errorFields.state"
+          />
+        </label>
+
+        <label class="text-sm font-bold"
           >City<input
             v-model.trim="form.city"
             required
             class="mt-2 w-full rounded-lg border border-slate-300 p-3"
             placeholder="Lekki"
-        /></label>
+          />
+          <FormErrorLabel :message="errorFields.city" v-if="errorFields.city" />
+        </label>
       </div>
       <label class="block text-sm font-bold"
         >Business address<input
           v-model.trim="form.address"
           required
-          class="mt-2 w-full rounded-lg border border-slate-300 p-3" /></label
+          class="mt-2 w-full rounded-lg border border-slate-300 p-3"
+        />
+        <FormErrorLabel
+          :message="errorFields.address"
+          v-if="errorFields.address"
+        /> </label
       ><button class="w-full rounded-xl bg-teal-700 py-3 font-bold text-white">
         Create store
       </button>

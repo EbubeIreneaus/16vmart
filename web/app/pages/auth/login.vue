@@ -71,6 +71,8 @@ const { form, reset } = useForm({
   password: "",
 });
 
+const redirect = useRoute().query.redirect as string | null
+
 const config = useRuntimeConfig();
 const isSubmitting = ref(false);
 const {
@@ -90,7 +92,7 @@ async function login() {
       body: form.value,
       credentials: "include",
     });
-    await navigateTo("/");
+    await navigateTo(redirect || "/");
   } catch (error) {
     setError(error);
   } finally {
