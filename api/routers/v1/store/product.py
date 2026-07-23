@@ -147,7 +147,7 @@ async def create_product(
         db.add(n_product)
         await db.flush()
 
-        return {"success": True, "product_id": n_product.id}
+        return {"success": True, "product_id": slug}
 
     except HTTPException:
         raise

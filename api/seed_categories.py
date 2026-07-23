@@ -27,7 +27,7 @@ def get_auth_headers(client: httpx.Client) -> dict[str, str]:
         )
 
     signin_response = client.post(
-        f"{API_BASE_URL}/api/auth/signin",
+        f"{API_BASE_URL}/api/v1/auth/signin",
         json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
         timeout=20,
     )
@@ -45,7 +45,7 @@ def get_auth_headers(client: httpx.Client) -> dict[str, str]:
 
 
 def get_existing_category_names(client: httpx.Client, headers: dict[str, str]) -> set[str]:
-    response = client.get(f"{API_BASE_URL}/api/cat/all", headers=headers, timeout=20)
+    response = client.get(f"{API_BASE_URL}/api/v1/cat/all", headers=headers, timeout=20)
     response.raise_for_status()
 
     categories = response.json()
@@ -69,7 +69,7 @@ def seed_categories() -> None:
                 continue
 
             response = client.post(
-                "/api/admin/cat/create-category",
+                "/api/v1/admin/cat/create-category",
                 headers=headers,
                 json=payload,
                 timeout=30,

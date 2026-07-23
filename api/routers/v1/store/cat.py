@@ -30,7 +30,7 @@ async def get_categories_for_store(
 ):
     resp_list = TypeAdapter(List[CategoryResp])
     cache = await redis.get("store:cat:all")
-    if cache:
+    if not cache:
         return resp_list.validate_json(cache)
     stmt = (
         select(Category)

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Product, Page } from '~/types/api'
-import { formatNaira } from '~/lib/money'
+import { formatNaira, toUSD } from '~/lib/money'
+import { toTitleCase } from '~/lib/text'
 
 definePageMeta({ layout: 'vendor', middleware: 'seller' })
 
@@ -57,8 +58,8 @@ function changePage(page: number) {
         </thead>
         <tbody>
           <tr v-for="product in response.items" :key="product.slug" class="border-t border-slate-100">
-            <td class="p-4 font-bold">{{ product.name }}</td>
-            <td class="p-4">{{ formatNaira(product.price) }}</td>
+            <td class="p-4 font-bold">{{ toTitleCase(product.name) }}</td>
+            <td class="p-4">{{ toUSD(product.price) }}</td>
             <td class="p-4">
               <span
                 class="rounded-full px-2 py-1 text-xs font-bold"
@@ -67,7 +68,8 @@ function changePage(page: number) {
                 {{ product.available ? 'Live' : 'Unavailable' }}
               </span>
             </td>
-            <td class="p-4 text-right">
+            <td class="p-4 text-right space-x-3">
+              <NuxtLink :to="`/vendor/${storeSlug}/products/${product.slug}/images`" class="font-bold text-slate-600 hover:text-teal-700">Images</NuxtLink>
               <NuxtLink :to="`/products/${product.slug}`" class="font-bold text-teal-700">View</NuxtLink>
             </td>
           </tr>

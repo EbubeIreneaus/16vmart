@@ -4,9 +4,13 @@ import type { AttributeKey, Category } from '~/types/api'
 definePageMeta({ layout: 'vendor', middleware: 'seller' })
 
 const route = useRoute()
+const router = useRouter()
 const storeSlug = String(route.params.store)
 const { api } = useApi()
+
 const isSubmitting = ref(false)
+const isLoadingAttributes = ref(false)
+
 const {
   fields: errorFields,
   message: errorMessage,
@@ -14,94 +18,107 @@ const {
   clearErrors,
 } = useGetAPIFormError()
 
-// Fetch categories from store's endpoint
 const { data: storeCategories } = await useAsyncData(
   `vendor-cats-${storeSlug}`,
   () => api<Category[]>(`/store/${storeSlug}/cat/all`),
   { default: () => [] }
 )
 
-const selectedCategory = ref<string | null>(null)
-const selectedSubcategory = ref<string | null>(null)
+const selectedCategoryId = ref<number | null>(null)
+const selectedSubcategoryId = ref<number | null>(null)
 
-const childCategories = computed(() =>
-  (storeCategories.value || []).find((c: any) => c.slug === selectedCategory.value)?.sub_categories || []
-)
+const childCategories = computed(() => {
+  if (!selectedCategoryId.value) return []
+  const parent = (storeCategories.value || []).find(c => c.id === selectedCategoryId.value)
+  return parent?.sub_categories || []
+})
 
-// Fetch attributes when subcategory is selected
 const fields = ref<AttributeKey[]>([])
-watch(selectedSubcategory, async (catSlug) => {
-  if (!catSlug) {
+const values = reactive<Record<number, any>>({})
+
+watch([selectedCategoryId, selectedSubcategoryId], async ([catId, subCatId]) => {
+  const targetCatId = subCatId || catId
+  if (!targetCatId) {
     fields.value = []
     return
   }
+
+  isLoadingAttributes.value = true
   try {
-    // Find the parent to merge parent + child attributes
-    const parent = (storeCategories.value || []).find((c: any) =>
-      c.sub_categories?.some((s: any) => s.slug === catSlug)
-    )
-    const child = parent?.sub_categories?.find((s: any) => s.slug === catSlug)
-    const parentAttrs = (parent as any)?.attributes || []
-    const childAttrs = (child as any)?.attributes || []
-    fields.value = [...parentAttrs, ...childAttrs]
-  } catch {
+    const fetchedAttrs = await api<AttributeKey[]>(`/store/${storeSlug}/cat/attr/${targetCatId}`)
+    fields.value = fetchedAttrs || []
+    
+    for (const attr of fields.value) {
+      if (values[attr.id] === undefined) {
+        if (attr.form_type === 'boolean') {
+          values[attr.id] = false
+        } else if (attr.form_type === 'multiple') {
+          values[attr.id] = []
+        } else {
+          values[attr.id] = ''
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load attributes', err)
     fields.value = []
+  } finally {
+    isLoadingAttributes.value = false
   }
 })
 
-// Form data
-const { form } = useForm({
+const form = reactive({
   name: '',
   price: 0,
   description: '',
   condition: 'brand new' as 'brand new' | 'used',
-  category_slug: '',
+  available: true,
 })
-const values = reactive<Record<number, unknown>>({})
-const imageFiles = ref<File[]>([])
 
-function onFilesSelected(event: Event) {
-  const target = event.target as HTMLInputElement
-  if (target.files) {
-    imageFiles.value = Array.from(target.files)
-  }
+function onCategoryChange() {
+  selectedSubcategoryId.value = null
 }
 
 async function saveProduct() {
   clearErrors()
+
+  const catId = selectedSubcategoryId.value || selectedCategoryId.value
+  if (!catId) {
+    setError('Please select a product category.')
+    return
+  }
+
   isSubmitting.value = true
 
   try {
-    // Build attributes array
-    const attributes = fields.value
-      .filter(f => values[f.id] !== undefined && values[f.id] !== '')
+    const attributesPayload = fields.value
+      .filter(f => values[f.id] !== undefined && values[f.id] !== null && values[f.id] !== '')
       .map(f => ({
-        name: f.name,
-        type: f.form_type,
+        attribute_id: f.id,
         value: values[f.id],
       }))
 
-    // Create product
-    const product = await api<{ slug: string }>(`/store/${storeSlug}/products/`, {
-      method: 'POST',
-      body: {
-        ...form.value,
-        category_slug: selectedSubcategory.value || selectedCategory.value,
-        attributes,
-      },
-    })
+    const response = await api<{ success: boolean; product_id: string }>(
+      `/store/${storeSlug}/products/`,
+      {
+        method: 'POST',
+        body: {
+          name: form.name.trim(),
+          price: form.price,
+          description: form.description.trim(),
+          condition: form.condition,
+          available: form.available,
+          category_id: Number(catId),
+          attributes: attributesPayload,
+        },
+      }
+    )
 
-    // Upload images
-    if (imageFiles.value.length > 0 && product?.slug) {
-      const formData = new FormData()
-      imageFiles.value.forEach(file => formData.append('images', file))
-      await api(`/store/${storeSlug}/products/image/${product.slug}`, {
-        method: 'PATCH',
-        body: formData,
-      })
+    if (response?.product_id) {
+      await router.push(`/vendor/${storeSlug}/products/${response.product_id}/images`)
+    } else {
+      await router.push(`/vendor/${storeSlug}/products`)
     }
-
-    await navigateTo(`/vendor/${storeSlug}/products`)
   } catch (error) {
     setError(error)
   } finally {
@@ -111,151 +128,252 @@ async function saveProduct() {
 </script>
 
 <template>
-  <div>
-    <p class="text-sm font-bold uppercase tracking-widest text-teal-700">Catalog</p>
-    <h1 class="mt-2 text-4xl font-black">Add a product</h1>
-    <p class="mt-2 text-slate-500">
-      Fields appear from the selected subcategory and its parent category.
-    </p>
-
-    <form class="mt-8 grid gap-7 lg:grid-cols-[1fr_320px]" @submit.prevent="saveProduct">
-      <section class="space-y-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <p v-if="errorMessage" class="rounded-lg bg-rose-50 p-3 text-sm font-semibold text-rose-700">
-          {{ errorMessage }}
+  <div class="max-w-6xl mx-auto px-4 py-6">
+    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-6">
+      <div>
+        <p class="text-xs font-black uppercase tracking-widest text-teal-700">Catalog &bull; Step 1 of 2</p>
+        <h1 class="mt-1 text-3xl font-black text-slate-900">Add Product Details</h1>
+        <p class="mt-1 text-sm text-slate-500">
+          Enter product information and category specification attributes. Product images are uploaded in Step 2.
         </p>
+      </div>
 
-        <!-- Category selectors -->
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center rounded-full bg-teal-100 px-3 py-1 text-xs font-bold text-teal-800">
+          Step 1: Product Info
+        </span>
+        <span class="text-slate-300">&rarr;</span>
+        <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-400">
+          Step 2: Upload Images
+        </span>
+      </div>
+    </div>
+
+    <form class="mt-8 grid gap-7 lg:grid-cols-[1fr_300px]" @submit.prevent="saveProduct">
+      <section class="space-y-6 rounded-2xl bg-white p-6 sm:p-8 shadow-sm ring-1 ring-slate-200">
+        <div v-if="errorMessage" class="rounded-xl bg-rose-50 p-4 text-sm font-semibold text-rose-700 border border-rose-200">
+          {{ errorMessage }}
+        </div>
+
         <div class="grid gap-5 md:grid-cols-2">
-          <label class="text-sm font-bold">
-            Category
+          <label class="text-sm font-bold text-slate-800">
+            Category <span class="text-rose-500">*</span>
             <select
-              v-model="selectedCategory"
-              class="mt-2 w-full rounded-lg border border-slate-300 p-3"
-              @change="selectedSubcategory = null"
+              v-model="selectedCategoryId"
+              required
+              class="mt-2 w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-teal-600 outline-none"
+              @change="onCategoryChange"
             >
               <option :value="null" disabled>Select category</option>
-              <option v-for="cat in storeCategories" :key="cat.slug" :value="cat.slug">
-                {{ cat.name }}
+              <option v-for="cat in storeCategories" :key="cat.id" :value="cat.id">
+                {{ cat.name.toUpperCase() }}
               </option>
             </select>
           </label>
-          <label class="text-sm font-bold">
+
+          <label class="text-sm font-bold text-slate-800">
             Subcategory
             <select
-              v-model="selectedSubcategory"
-              class="mt-2 w-full rounded-lg border border-slate-300 p-3"
-              :disabled="!selectedCategory"
+              v-model="selectedSubcategoryId"
+              class="mt-2 w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-teal-600 outline-none disabled:bg-slate-50 disabled:text-slate-400"
+              :disabled="!selectedCategoryId || !childCategories.length"
             >
-              <option :value="null" disabled>Select subcategory</option>
-              <option v-for="sub in childCategories" :key="sub.slug" :value="sub.slug">
-                {{ sub.name }}
+              <option :value="null">
+                {{ childCategories.length ? 'Select subcategory (optional)' : 'No subcategories' }}
+              </option>
+              <option v-for="sub in childCategories" :key="sub.id" :value="sub.id">
+                {{ sub.name.toUpperCase() }}
               </option>
             </select>
           </label>
         </div>
 
-        <!-- Core fields -->
+        <!-- Basic Product Information -->
         <div class="grid gap-5 md:grid-cols-2">
-          <label class="text-sm font-bold">
-            Product name
+          <label class="text-sm font-bold text-slate-800">
+            Product Name <span class="text-rose-500">*</span>
             <input
               v-model="form.name"
-              class="mt-2 w-full rounded-lg border border-slate-300 p-3"
-              placeholder="e.g. Aurora smartphone"
               required
+              class="mt-2 w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-teal-600 outline-none"
+              placeholder="e.g. Wireless Noise Canceling Headphones"
             />
           </label>
-          <label class="text-sm font-bold">
-            Price ($)
+
+          <label class="text-sm font-bold text-slate-800">
+            Price ($) <span class="text-rose-500">*</span>
             <input
               v-model.number="form.price"
               type="number"
-              class="mt-2 w-full rounded-lg border border-slate-300 p-3"
+              step="0.01"
+              min="0"
               required
+              class="mt-2 w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-teal-600 outline-none"
+              placeholder="0.00"
             />
           </label>
         </div>
 
         <div class="grid gap-5 md:grid-cols-2">
-          <label class="text-sm font-bold">
+          <label class="text-sm font-bold text-slate-800">
             Condition
-            <select v-model="form.condition" class="mt-2 w-full rounded-lg border border-slate-300 p-3">
-              <option value="brand new">Brand new</option>
+            <select v-model="form.condition" class="mt-2 w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-teal-600 outline-none">
+              <option value="brand new">Brand New</option>
               <option value="used">Used</option>
             </select>
           </label>
-          <label class="text-sm font-bold">
-            Product images
+
+          <label class="text-sm font-bold text-slate-800 flex items-center gap-3 pt-6">
             <input
-              type="file"
-              multiple
-              accept="image/*"
-              class="mt-2 w-full rounded-lg border border-slate-300 p-2.5"
-              @change="onFilesSelected"
+              v-model="form.available"
+              type="checkbox"
+              class="h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
             />
+            <span>Available for Sale</span>
           </label>
         </div>
 
-        <label class="block text-sm font-bold">
-          Description
+        <label class="block text-sm font-bold text-slate-800">
+          Product Description <span class="text-rose-500">*</span>
           <textarea
             v-model="form.description"
-            class="mt-2 min-h-28 w-full rounded-lg border border-slate-300 p-3"
             required
+            rows="4"
+            class="mt-2 w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-teal-600 outline-none"
+            placeholder="Detailed description of features, specifications, and warranty..."
           />
         </label>
 
-        <!-- Dynamic attributes -->
-        <div v-if="fields.length" class="border-t border-slate-200 pt-6">
+        <!-- Dynamic Category Attributes Section -->
+        <div class="border-t border-slate-200 pt-6">
           <div class="flex items-center justify-between">
-            <h2 class="text-xl font-black">Product attributes</h2>
-            <span class="text-xs font-bold text-teal-700">{{ fields.length }} required by category</span>
+            <div>
+              <h2 class="text-lg font-black text-slate-900">Category Attributes</h2>
+              <p class="text-xs text-slate-500">Attributes required or configured for the chosen category.</p>
+            </div>
+            <span v-if="isLoadingAttributes" class="text-xs font-bold text-teal-700 animate-pulse">
+              Loading category attributes...
+            </span>
+            <span v-else-if="fields.length" class="text-xs font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full">
+              {{ fields.length }} attribute{{ fields.length > 1 ? 's' : '' }}
+            </span>
           </div>
-          <div class="mt-5 grid gap-5 md:grid-cols-2">
-            <label v-for="field in fields" :key="field.id" class="text-sm font-bold">
-              {{ field.name }} <span v-if="field.required" class="text-rose-600">*</span>
-              <template v-if="field.form_type === 'select' || field.form_type === 'radio'">
-                <select v-model="values[field.id]" class="mt-2 w-full rounded-lg border border-slate-300 p-3">
-                  <option disabled value="">Select {{ field.name }}</option>
-                  <option v-for="option in field.options" :key="option">{{ option }}</option>
+
+          <!-- Dynamic Input Fields Rendering -->
+          <div v-if="fields.length" class="mt-5 grid gap-5 md:grid-cols-2">
+            <div v-for="field in fields" :key="field.id" class="text-sm font-bold text-slate-800">
+              <label class="block">
+                {{ field.name }}
+                <span v-if="field.required" class="text-rose-500">*</span>
+              </label>
+
+              <!-- Select Input -->
+              <template v-if="field.form_type === 'select'">
+                <select
+                  v-model="values[field.id]"
+                  :required="field.required"
+                  class="mt-2 w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-teal-600 outline-none"
+                >
+                  <option value="" disabled>Select {{ field.name }}</option>
+                  <option v-for="opt in field.options" :key="opt" :value="opt">{{ opt }}</option>
                 </select>
               </template>
+
+              <!-- Radio Input -->
+              <template v-else-if="field.form_type === 'radio'">
+                <div class="mt-2 space-y-2">
+                  <label v-for="opt in field.options" :key="opt" class="flex items-center gap-2 font-normal text-sm cursor-pointer">
+                    <input
+                      v-model="values[field.id]"
+                      type="radio"
+                      :name="`attr-${field.id}`"
+                      :value="opt"
+                      class="text-teal-600"
+                    />
+                    <span>{{ opt }}</span>
+                  </label>
+                </div>
+              </template>
+
+              <!-- Multiple Select Input -->
               <template v-else-if="field.form_type === 'multiple'">
-                <select v-model="values[field.id]" multiple class="mt-2 min-h-28 w-full rounded-lg border border-slate-300 p-3">
-                  <option v-for="option in field.options" :key="option">{{ option }}</option>
+                <select
+                  v-model="values[field.id]"
+                  multiple
+                  class="mt-2 min-h-28 w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-teal-600 outline-none"
+                >
+                  <option v-for="opt in field.options" :key="opt" :value="opt">{{ opt }}</option>
                 </select>
+                <p class="mt-1 text-[11px] text-slate-400 font-normal">Hold Ctrl / Cmd to select multiple items.</p>
               </template>
-              <input
-                v-else-if="field.form_type === 'boolean'"
-                v-model="values[field.id]"
-                type="checkbox"
-                class="mt-3 size-5"
-              />
-              <input
-                v-else
-                :type="field.form_type === 'number' ? 'number' : field.form_type === 'date' ? 'date' : 'text'"
-                v-model="values[field.id]"
-                class="mt-2 w-full rounded-lg border border-slate-300 p-3"
-              />
-            </label>
+
+              <!-- Boolean Input (Checkbox) -->
+              <template v-else-if="field.form_type === 'boolean'">
+                <label class="mt-3 flex items-center gap-2 font-normal text-sm cursor-pointer">
+                  <input
+                    v-model="values[field.id]"
+                    type="checkbox"
+                    class="h-5 w-5 rounded border-slate-300 text-teal-600"
+                  />
+                  <span>Yes / True</span>
+                </label>
+              </template>
+
+              <!-- Date Input -->
+              <template v-else-if="field.form_type === 'date'">
+                <input
+                  v-model="values[field.id]"
+                  type="date"
+                  :required="field.required"
+                  class="mt-2 w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-teal-600 outline-none"
+                />
+              </template>
+
+              <!-- Number Input -->
+              <template v-else-if="field.form_type === 'number'">
+                <input
+                  v-model.number="values[field.id]"
+                  type="number"
+                  :required="field.required"
+                  class="mt-2 w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-teal-600 outline-none"
+                />
+              </template>
+
+              <!-- Default Text Input -->
+              <template v-else>
+                <input
+                  v-model="values[field.id]"
+                  type="text"
+                  :required="field.required"
+                  class="mt-2 w-full rounded-xl border border-slate-300 p-3 text-sm focus:border-teal-600 outline-none"
+                  :placeholder="`Enter ${field.name.toLowerCase()}`"
+                />
+              </template>
+            </div>
+          </div>
+
+          <div v-else-if="selectedCategoryId" class="mt-4 rounded-xl bg-slate-50 p-4 text-center text-sm text-slate-500 italic">
+            No specific attributes configured for this category.
+          </div>
+
+          <div v-else class="mt-4 rounded-xl bg-amber-50/70 p-4 text-sm text-amber-800 border border-amber-200">
+            Please select a category above to load category-specific attributes.
           </div>
         </div>
-        <p v-else class="rounded-xl bg-amber-50 p-4 text-sm text-amber-800">
-          Choose a category and subcategory to load both inherited and subcategory-specific attributes.
-        </p>
       </section>
 
-      <aside class="h-fit rounded-2xl bg-slate-950 p-6 text-white">
-        <h2 class="text-xl font-black">Publishing</h2>
-        <p class="mt-2 text-sm text-slate-400">
-          A product must be linked to a subcategory before it can be published.
+      <!-- Sidebar Action -->
+      <aside class="h-fit rounded-2xl bg-slate-900 p-6 text-white shadow-xl">
+        <h2 class="text-xl font-black">Next Step</h2>
+        <p class="mt-2 text-sm text-slate-300">
+          Once product details are saved, you will proceed to Step 2 to upload high-resolution product images.
         </p>
         <button
           type="submit"
           :disabled="isSubmitting"
-          class="mt-6 w-full rounded-xl bg-teal-500 px-5 py-3 font-bold disabled:opacity-60"
+          class="mt-6 w-full rounded-xl bg-teal-600 hover:bg-teal-500 py-3.5 text-sm font-bold text-white shadow-lg transition disabled:opacity-60 flex items-center justify-center gap-2"
         >
-          {{ isSubmitting ? 'Saving…' : 'Save product' }}
+          <span>{{ isSubmitting ? 'Saving Product...' : 'Continue to Upload Images &rarr;' }}</span>
         </button>
       </aside>
     </form>
