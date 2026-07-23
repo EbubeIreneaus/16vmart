@@ -1,27 +1,16 @@
 <script setup lang="ts">
-import type { Store } from "~/types/api";
+import type { Store } from '~/types/api'
+import { formatNaira } from '~/lib/money'
 
-const cookie = useCookie("access_token");
-const config = useRuntimeConfig();
+definePageMeta({ middleware: 'seller' })
 
-const { data, error, refresh } = await useFetch<Store[]>(
-  `${config.public.apiUrl}/store/entity`,
-  {
-    headers: {
-      Authorization: `Bearer ${cookie.value}`,
-    },
-  },
-);
+const { api } = useApi()
 
-if (error.value) {
-  if (error.value.status == 401) {
-    await navigateTo("/auth/login?q=/vendor");
-  } else {
-    throw createError(error.value);
-  }
-}
-
-const stores: Store[] | undefined = data.value;
+const { data: stores, error, refresh } = await useAsyncData(
+  'vendor-stores-list',
+  () => api<Store[]>('/store/entity'),
+  { default: () => [] }
+)
 </script>
 
 <template>
@@ -48,7 +37,7 @@ const stores: Store[] | undefined = data.value;
         v-for="store in stores"
         :key="store.slug"
         :to="`/vendor/${store.slug}`"
-        class="group rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-md"
+        class="group rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-md cursor-pointer"
       >
         <div class="flex items-start justify-between gap-4">
           <div
@@ -63,7 +52,7 @@ const stores: Store[] | undefined = data.value;
                 ? 'bg-emerald-100 text-emerald-700'
                 : 'bg-amber-100 text-amber-700'
             "
-            >{{ store.status.replace("_", " ") }}</span
+            >{{ store.status.replace('_', ' ') }}</span
           >
         </div>
         <h2 class="mt-5 text-2xl font-black">{{ store.name }}</h2>

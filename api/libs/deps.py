@@ -71,7 +71,7 @@ async def get_store(
     user: UserShema = Depends(get_user), db: AsyncSession = Depends(get_db)
 ) -> InternalStoreSchema:
 
-    if user.role != ROLE.SELLER:
+    if user.role != ROLE.SELLER and user.role != ROLE.ADMIN and user.role != ROLE.SUPERADMIN:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorised Access"
         )

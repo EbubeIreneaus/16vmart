@@ -64,6 +64,12 @@
           
         </u-button>
       </form>
+      <p class="mt-5 text-sm text-slate-600">
+        Already have an account?
+        <NuxtLink to="/auth/login" class="font-bold text-teal-700">
+          Sign in</NuxtLink
+        >
+      </p>
     </section>
   </div>
 </template>
@@ -75,7 +81,6 @@ const { form, reset } = useForm({
   password: "",
 });
 const isLoading = ref(false);
-const config = useRuntimeConfig();
 const {
   fields: errorFields,
   message: errorMessage,
@@ -83,14 +88,15 @@ const {
   clearErrors,
 } = useGetAPIFormError();
 
+const authStore = useAuthStore()
+const cartStore = useCartStore()
+
 async function Register() {
   clearErrors();
   isLoading.value = true;
   try {
-    const res = await $fetch(`${config.public.apiUrl}/auth/signup`, {
-      method: "POST",
-      body: form.value,
-    });
+    await authStore.register(form.value.fullname, form.value.email, form.value.password)
+    await cartStore.syncGuestCartToServer()
     await navigateTo("/");
   } catch (error) {
     setError(error);

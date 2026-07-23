@@ -95,9 +95,15 @@ async def signup(
         session.add_all([new_user, new_session])
         await session.flush()
 
+        IS_SECURE = setting.APP_URL.startswith("https")
+        role_str = new_user.role.value if hasattr(new_user.role, "value") else str(new_user.role)
+
         jwt_encoded_data = {
             "sub": str(new_user.id),
             "session_id": new_session.id,
+            "role": role_str,
+            "fullname": new_user.fullname,
+            "email": new_user.email,
             "exp": access_token_expired_at,
         }
         token = encode(jwt_encoded_data)
@@ -106,7 +112,7 @@ async def signup(
             token,
             expires=access_token_expired_at,
             samesite="lax",
-            secure=True,
+            secure=IS_SECURE,
         )
         response.set_cookie(
             "refresh_token",
@@ -114,7 +120,7 @@ async def signup(
             expires=refresh_token_expired_at,
             httponly=True,
             samesite="lax",
-            secure=True,
+            secure=IS_SECURE,
         )
 
         try:
@@ -204,9 +210,15 @@ async def signin(
         db.add(session)
         await db.flush()
 
+        IS_SECURE = setting.APP_URL.startswith("https")
+        role_str = user.role.value if hasattr(user.role, "value") else str(user.role)
+
         jwt_data = {
             "sub": str(user.id),
             "session_id": session.id,
+            "role": role_str,
+            "fullname": user.fullname,
+            "email": user.email,
             "exp": access_token_expired_at,
         }
 
@@ -216,7 +228,7 @@ async def signin(
             token,
             expires=access_token_expired_at,
             samesite="lax",
-            secure=True,
+            secure=IS_SECURE,
         )
         response.set_cookie(
             "refresh_token",
@@ -224,7 +236,7 @@ async def signin(
             expires=refresh_token_expired_at,
             httponly=True,
             samesite="lax",
-            secure=True,
+            secure=IS_SECURE,
         )
 
         try:
@@ -257,7 +269,7 @@ async def refresh_token(
 ):
     if not refresh_token:
         raise HTTPException(
-            status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Invalid request"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing refresh token"
         )
     hashed_refresh_token = hashlib.sha256(refresh_token.encode()).hexdigest()
     stmt = (
@@ -291,9 +303,18 @@ async def refresh_token(
     session.refresh_token_hash = n_r_hashed
     session.expired_at = refresh_token_exp_at
 
+    IS_SECURE = setting.APP_URL.startswith("https")
+    user_role = session.user.role if session.user else "user"
+    role_str = user_role.value if hasattr(user_role, "value") else str(user_role)
+    user_name = session.user.fullname if session.user else ""
+    user_email = session.user.email if session.user else ""
+
     jwt_data = {
         "sub": str(user_id),
         "session_id": session.id,
+        "role": role_str,
+        "fullname": user_name,
+        "email": user_email,
         "exp": access_token_expire_at,
     }
 
@@ -304,7 +325,7 @@ async def refresh_token(
         token,
         expires=access_token_expire_at,
         samesite="lax",
-        secure=True,
+        secure=IS_SECURE,
     )
     response.set_cookie(
         "refresh_token",
@@ -312,7 +333,7 @@ async def refresh_token(
         expires=refresh_token_exp_at,
         httponly=True,
         samesite="lax",
-        secure=True,
+        secure=IS_SECURE,
     )
 
     try:
@@ -321,6 +342,32 @@ async def refresh_token(
     except:
         pass
 
+    return {"success": True}
+
+
+@router.post("/signout")
+@router.post("/logout")
+async def signout(
+    response: Response,
+    request: Request,
+    refresh_token: Annotated[str | None, Cookie()] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    if refresh_token:
+        try:
+            hashed_refresh_token = hashlib.sha256(refresh_token.encode()).hexdigest()
+            session = await db.scalar(
+                select(SessionModel).where(SessionModel.refresh_token_hash == hashed_refresh_token)
+            )
+            if session:
+                await redis.delete(f"session:{session.id}")
+                await db.delete(session)
+                await db.flush()
+        except Exception:
+            pass
+
+    response.delete_cookie("access_token", path="/")
+    response.delete_cookie("refresh_token", path="/")
     return {"success": True}
 
 

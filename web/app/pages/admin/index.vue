@@ -1,2 +1,55 @@
-<script setup lang="ts">definePageMeta({ layout: 'admin' }); const activeRole = useMockRole()</script>
-<template><div><p class="text-sm font-bold uppercase tracking-widest text-teal-700">Platform control</p><h1 class="mt-2 text-4xl font-black">Marketplace overview</h1><div class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><div v-for="stat in [{l:'Active users',v:'1,284'},{l:'Active stores',v:'146'},{l:'Orders this month',v:'892'},{l:'Vendor payouts due',v:'₦1.8m'}]" :key="stat.l" class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><p class="text-sm text-slate-500">{{ stat.l }}</p><p class="mt-2 text-3xl font-black">{{ stat.v }}</p></div></div><section class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><h2 class="text-xl font-black">Role-aware administration</h2><p class="mt-2 text-slate-600">This single interface uses the current role to control sensitive actions. The mock is currently set to <strong class="capitalize">{{ activeRole }}</strong>; server-side authorization will remain the source of truth when integration begins.</p></section></div></template>
+<script setup lang="ts">
+import type { Page, User, Store, OrderMini } from '~/types/api'
+
+definePageMeta({ layout: 'admin', middleware: 'admin' })
+
+const { api } = useApi()
+const auth = useAuthStore()
+
+// Fetch totals from paginated endpoints (size=1 to get just the total count)
+const { data: stats } = await useAsyncData('admin-stats', async () => {
+  const [users, stores, orders] = await Promise.allSettled([
+    api<Page<User>>('/admin/users/all', { params: { page: 1, size: 1, s: 'active' } }),
+    api<Page<Store>>('/admin/stores/all', { params: { page: 1, size: 1 } }),
+    api<Page<OrderMini>>('/admin/orders/', { params: { page: 1, size: 1 } }),
+  ])
+  return {
+    users: users.status === 'fulfilled' ? users.value.total : 0,
+    stores: stores.status === 'fulfilled' ? stores.value.total : 0,
+    orders: orders.status === 'fulfilled' ? orders.value.total : 0,
+  }
+}, {
+  default: () => ({ users: 0, stores: 0, orders: 0 }),
+})
+</script>
+
+<template>
+  <div>
+    <p class="text-sm font-bold uppercase tracking-widest text-teal-700">Platform control</p>
+    <h1 class="mt-2 text-4xl font-black">Marketplace overview</h1>
+
+    <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div
+        v-for="stat in [
+          { l: 'Active users', v: stats.users.toLocaleString() },
+          { l: 'Registered stores', v: stats.stores.toLocaleString() },
+          { l: 'Total orders', v: stats.orders.toLocaleString() },
+        ]"
+        :key="stat.l"
+        class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"
+      >
+        <p class="text-sm text-slate-500">{{ stat.l }}</p>
+        <p class="mt-2 text-3xl font-black">{{ stat.v }}</p>
+      </div>
+    </div>
+
+    <section class="mt-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+      <h2 class="text-xl font-black">Role-aware administration</h2>
+      <p class="mt-2 text-slate-600">
+        This interface uses the current role to control sensitive actions. You are signed in as
+        <strong class="capitalize">{{ auth.user?.role }}</strong>. Server-side authorization remains the
+        source of truth.
+      </p>
+    </section>
+  </div>
+</template>

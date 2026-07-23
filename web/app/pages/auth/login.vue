@@ -55,12 +55,17 @@
           {{ isSubmitting ? "Signing in…" : "Sign in" }}
         </button>
       </form>
-      <p class="mt-5 text-sm text-slate-600">
-        New here?
-        <NuxtLink to="/register" class="font-bold text-teal-700">
-          Create an account</NuxtLink
-        >
-      </p>
+      <div class="mt-5 flex items-center justify-between text-sm text-slate-600">
+        <p>
+          New here?
+          <NuxtLink to="/auth/register" class="font-bold text-teal-700">
+            Create an account</NuxtLink
+          >
+        </p>
+        <NuxtLink to="/auth/forgot-password" class="font-bold text-teal-700">
+          Forgot password?
+        </NuxtLink>
+      </div>
     </section>
   </div>
 </template>
@@ -73,7 +78,6 @@ const { form, reset } = useForm({
 
 const redirect = useRoute().query.redirect as string | null
 
-const config = useRuntimeConfig();
 const isSubmitting = ref(false);
 const {
   fields: fieldErrors,
@@ -82,16 +86,21 @@ const {
   clearErrors,
 } = useGetAPIFormError();
 
+const authStore = useAuthStore()
+const cartStore = useCartStore()
+const wishlistStore = useWishlistStore()
+
 async function login() {
   clearErrors();
   isSubmitting.value = true;
 
   try {
-    await $fetch(`${config.public.apiUrl}/auth/signin`, {
-      method: "POST",
-      body: form.value,
-      credentials: "include",
-    });
+    await authStore.login(form.value.email, form.value.password)
+    // Sync guest cart and fetch wishlist IDs after login
+    await Promise.allSettled([
+      cartStore.syncGuestCartToServer(),
+      wishlistStore.fetchIds(),
+    ])
     await navigateTo(redirect || "/");
   } catch (error) {
     setError(error);

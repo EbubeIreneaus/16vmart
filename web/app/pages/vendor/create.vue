@@ -1,43 +1,46 @@
 <script setup lang="ts">
-import FormErrorLabel from "~/components/FormErrorLabel.vue";
-import type { Store } from "~/types/api";
-import { INDUSTRY_CHOICES } from "~/lib/industries";
+import FormErrorLabel from '~/components/FormErrorLabel.vue'
+import type { Store } from '~/types/api'
+import { INDUSTRY_CHOICES } from '~/lib/industries'
+
+
+definePageMeta({ middleware: 'auth-required' })
 
 const { form } = useForm({
-  name: "",
-  industry: "",
-  email: "",
-  phone: "",
-  state: "",
-  city: "",
-  address: "",
-});
+  name: '',
+  industry: '',
+  email: '',
+  phone: '',
+  state: '',
+  city: '',
+  address: '',
+})
 const {
   fields: errorFields,
   message: errorMessage,
   setError,
-} = useGetAPIFormError();
-const isLoading = ref(false);
-const config = useRuntimeConfig();
-const access_token = useCookie("access_token").value;
+} = useGetAPIFormError()
+const isLoading = ref(false)
+const config = useRuntimeConfig()
+const access_token = useCookie('access_token').value
 
 async function createStore() {
-  isLoading.value = true;
-  setError("");
+  isLoading.value = true
+  setError('')
   try {
     const res = await $fetch(`${config.public.apiUrl}/store/entity`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${access_token}`,
       },
       body: form.value,
-    });
-    await navigateTo("/vendor");
+    })
+    await navigateTo('/vendor')
   } catch (error: any) {
-    setError(error);
+    setError(error)
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
 }
 </script>
@@ -51,8 +54,7 @@ async function createStore() {
     </p>
     <h1 class="mt-2 text-4xl font-black">Create a store</h1>
     <p class="mt-2 text-slate-600">
-      This is a mock of the API’s StoreSchemaIn payload. Your store will be
-      submitted for review after live integration.
+      Fill in your store details. Your store will be submitted for review after creation.
     </p>
     <form
       class="mt-8 space-y-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"
@@ -159,8 +161,8 @@ async function createStore() {
           :message="errorFields.address"
           v-if="errorFields.address"
         /> </label
-      ><button class="w-full rounded-xl bg-teal-700 py-3 font-bold text-white">
-        Create store
+      ><button class="w-full rounded-xl bg-teal-700 py-3 font-bold text-white" :disabled="isLoading">
+        {{ isLoading ? 'Creating…' : 'Create store' }}
       </button>
     </form>
   </div>
