@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.user import Address
 from schemas.user import BaseAddress, AddressInSchema, AddressOutschema, UserShema
 from libs.limiter import limiter
+
 router = APIRouter(prefix="/user")
 
 @router.post("/create-address")
@@ -59,7 +60,7 @@ async def get_addresses(
 ):
     addresses =  (await db.scalars(
         select(Address)
-        .where(Address.user_id == user.id, Address.deleted_at==False)
+        .where(Address.user_id == user.id, Address.deleted==False)
     )).all()
 
     return addresses

@@ -1,3 +1,4 @@
+from schemas.store.entity import InternalStoreSchema
 from datetime import datetime, timezone
 import re
 from typing import Optional, List
@@ -372,7 +373,7 @@ async def store_search_product(
 @router.get("/{slug}", response_model=SingleProductOut)
 async def store_get_single_product(
     slug: str,
-    store: StoreSchema = Depends(get_store),
+    store: InternalStoreSchema = Depends(get_store),
     db: AsyncSession = Depends(get_db),
 ):
     _slug = slug.lower().strip()
@@ -381,6 +382,7 @@ async def store_get_single_product(
         select(Product)
         .options(
             selectinload(Product.images),
+            selectinload(Product.category),
             selectinload(Product.store),
             selectinload(Product.attributes).options(
                 selectinload(ProductAttribute.attribute)

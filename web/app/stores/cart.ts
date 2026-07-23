@@ -9,14 +9,15 @@ export const useCartStore = defineStore('cart', () => {
   const loading = ref(false)
   const { api } = useApi()
   const auth = useAuthStore()
+  const config = useRuntimeConfig()
+  const baseURL = config.public.apiUrl as string
 
   const cartCount = computed(() => simpleItems.value.reduce((sum, item) => sum + item.quantity, 0))
   const cartTotal = computed(() =>
     items.value.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0),
   )
 
-  // ── Guest cart (localStorage) ──────────────────────────────
-
+ 
   function getGuestCart(): CartItem[] {
     if (import.meta.server) return []
     try {
@@ -37,13 +38,33 @@ export const useCartStore = defineStore('cart', () => {
     localStorage.removeItem(GUEST_CART_KEY)
   }
 
-  // ── API calls ──────────────────────────────────────────────
 
   async function fetchCart() {
     if (!auth.isAuthenticated) {
       simpleItems.value = getGuestCart()
+      if (simpleItems.value.length > 0) {
+        loading.value = true
+        try {
+          const fetchedItems: CartOut[] = []
+          for (const item of simpleItems.value) {
+            try {
+              const prod = await $fetch<any>(`${baseURL}/products/${item.product_id}`)
+              if (prod) {
+                fetchedItems.push({ product: prod, quantity: item.quantity })
+              }
+            } catch {
+            }
+          }
+          items.value = fetchedItems
+        } finally {
+          loading.value = false
+        }
+      } else {
+        items.value = []
+      }
       return
     }
+
     loading.value = true
     try {
       const [full, simple] = await Promise.all([
@@ -53,7 +74,6 @@ export const useCartStore = defineStore('cart', () => {
       items.value = full
       simpleItems.value = simple
     } catch {
-      // silently fail — cart is non-critical
     } finally {
       loading.value = false
     }
@@ -61,17 +81,19 @@ export const useCartStore = defineStore('cart', () => {
 
   async function addItem(productSlug: string, quantity: number = 1) {
     if (!auth.isAuthenticated) {
-      const guest = getGuestCart()
-      const existing = guest.findIndex(x => x.product_id === productSlug)
-      if (existing >= 0) {
-        guest[existing].quantity = quantity
+      const guest: CartItem[] = getGuestCart() 
+      const existing = guest.findIndex(x => x.product_id.toLowerCase() === productSlug.toLowerCase())
+      if (existing >= 0 && guest[existing]) {
+        guest[existing].quantity  = quantity
       } else {
         guest.push({ product_id: productSlug, quantity })
       }
       saveGuestCart(guest)
       simpleItems.value = guest
+      await fetchCart()
       return
     }
+
     await api('/carts', {
       method: 'POST',
       body: { product_id: productSlug, quantity },
@@ -81,12 +103,13 @@ export const useCartStore = defineStore('cart', () => {
 
   async function removeItem(productSlug: string) {
     if (!auth.isAuthenticated) {
-      const guest = getGuestCart().filter(x => x.product_id !== productSlug)
+      const guest = getGuestCart().filter(x => x.product_id.toLowerCase() !== productSlug.toLowerCase())
       saveGuestCart(guest)
       simpleItems.value = guest
-      items.value = items.value.filter(x => x.product.slug !== productSlug)
+      items.value = items.value.filter(x => x.product.slug.toLowerCase() !== productSlug.toLowerCase())
       return
     }
+
     await api(`/carts/${productSlug}`, { method: 'DELETE' })
     await fetchCart()
   }
@@ -95,7 +118,7 @@ export const useCartStore = defineStore('cart', () => {
     await addItem(productSlug, quantity)
   }
 
-  /** Push guest cart to server after login */
+  /** Push guest cart to server after user authenticates */
   async function syncGuestCartToServer() {
     const guestCart = getGuestCart()
     if (guestCart.length < 1) return
@@ -107,7 +130,7 @@ export const useCartStore = defineStore('cart', () => {
           body: { product_id: item.product_id, quantity: item.quantity },
         })
       } catch {
-        // skip items that fail (e.g. product no longer available)
+        // Skip invalid items
       }
     }
     clearGuestCart()

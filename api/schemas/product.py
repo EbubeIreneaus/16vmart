@@ -15,12 +15,16 @@ class CONDITION(Enum):
 class BaseCategorySchema(BaseModel):
     name: str
 
+    model_config = ConfigDict(from_attributes=True)
+
 class BaseProductAttributeSchema(BaseModel):
     json_value: Optional[list]
     text_value: Optional[str]
     date_value: Optional[datetime]
     number_value: Optional[float]
     boolean_value: Optional[bool]
+
+    model_config = ConfigDict(from_attributes=True)
 
 class BaseProductShema(BaseModel):
     name: str 
@@ -29,9 +33,13 @@ class BaseProductShema(BaseModel):
     condition: CONDITION = Field(default=CONDITION.NEW)
     available: bool = Field(default=True)
 
+    model_config = ConfigDict(from_attributes=True)
+
 class BaseProductImages(BaseModel):
     src: HttpUrl
     alt: Optional[str] = Field(default=None)
+
+    model_config = ConfigDict(from_attributes=True)
 
 class CategorySchema(BaseCategorySchema):
     id: int
@@ -50,6 +58,7 @@ class ProuctAttribute(BaseModel):
 
 class MiniProductResponse(BaseProductShema):
     slug: str
+    category: BaseCategorySchema
     images: List[BaseProductImages]
 
     model_config = ConfigDict(from_attributes=True)
@@ -57,3 +66,5 @@ class MiniProductResponse(BaseProductShema):
 class ProductResponse(MiniProductResponse):
     category: CategorySchema
     attributes: List[ProuctAttribute]
+
+    model_config = ConfigDict(from_attributes=True)

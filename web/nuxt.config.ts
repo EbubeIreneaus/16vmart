@@ -25,5 +25,10 @@ export default defineNuxtConfig({
     public: {
       apiUrl: process.env.NUXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
     }
+  },
+  vite: {
+    server: {
+      allowedHosts: ["localhost", "localhost:3000", "da74-102-91-97-173.ngrok-free.app"]
+    }
   }
 })

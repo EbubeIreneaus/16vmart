@@ -70,12 +70,16 @@ async def get_cart_items(
 
     products = (
         await db.scalars(
-            select(Product)
-            .options(selectinload(Product.images), selectinload(Product.store))
+            select(Product).distinct()
+            .options(
+                selectinload(Product.images),
+                selectinload(Product.category),
+                selectinload(Product.store),
+            )
             .where(
                 func.lower(Product.slug).in_(slugs),
-                Product.available==True,
-                Product.deleted==False,
+                Product.available == True,
+                Product.deleted == False,
                 Store.status == STORE_STATUS.ACTIVE,
             )
         )

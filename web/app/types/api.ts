@@ -35,7 +35,6 @@ export type OrderStatus =
 
 export type Condition = "brand new" | "used";
 
-/* ── fastapi-pagination Page wrapper ─────────────────────────── */
 
 export interface Page<T> {
   items: T[];
@@ -45,7 +44,6 @@ export interface Page<T> {
   pages: number;
 }
 
-/* ── Auth / User ─────────────────────────────────────────────── */
 
 export interface User {
   id: number;
@@ -70,7 +68,6 @@ export interface UserWithDetails extends User {
   sessions?: Session[];
 }
 
-/* ── Address ─────────────────────────────────────────────────── */
 
 export interface Address {
   address_id: string;
@@ -91,7 +88,6 @@ export interface AddressIn {
   zip_code: number;
 }
 
-/* ── Category / Attribute ────────────────────────────────────── */
 
 export interface AttributeKey {
   id: number;
@@ -119,7 +115,6 @@ export interface AdminCategory extends CategoryWithId {
   sub_categories: AdminCategory[];
 }
 
-/* ── Product ─────────────────────────────────────────────────── */
 
 export interface Image {
   src: string;
@@ -148,7 +143,6 @@ export interface ProductDetail extends Product {
   attributes: ProductAttribute[];
 }
 
-/* ── Store ────────────────────────────────────────────────────── */
 
 export interface Store {
   logo: string | null;
@@ -173,7 +167,6 @@ export interface StoreMetadata {
   pending_payout: number;
 }
 
-/* ── Cart ─────────────────────────────────────────────────────── */
 
 export interface CartItem {
   product_id: string;
@@ -185,14 +178,12 @@ export interface CartOut {
   quantity: number;
 }
 
-/* ── Wishlist ─────────────────────────────────────────────────── */
 
 export interface WishlistOut {
   product: Product;
   created_at: string;
 }
 
-/* ── Order ─────────────────────────────────────────────────────── */
 
 export interface OrderMini {
   order_number: string;
@@ -214,7 +205,6 @@ export interface OrderDetail extends OrderMini {
   items: OrderProduct[];
 }
 
-/* ── Vendor Order ─────────────────────────────────────────────── */
 
 export interface VendorOrderMini {
   vid: string;
@@ -245,7 +235,6 @@ export interface AdminOrderDetail extends OrderDetail {
   user: User;
 }
 
-/* ── Checkout ─────────────────────────────────────────────────── */
 
 export interface CheckoutPayload {
   idompotent_key: string;

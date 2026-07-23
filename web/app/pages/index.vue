@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { Product, Page, Category } from '~/types/api'
+import type { Product, Page, Category, ProductDetail } from '~/types/api'
 import { formatNaira } from '~/lib/money'
+import { toTitleCase } from '~/lib/text'
 
 const config = useRuntimeConfig()
 
@@ -69,7 +70,7 @@ const { data: trending } = await useAsyncData('trending-products', () =>
       </div>
       <div class="mt-7 grid gap-4 sm:grid-cols-3">
         <NuxtLink
-          v-for="category in categories"
+          v-for="category in categories.slice(6, 13)"
           :key="category.slug"
           :to="`/products?category=${category.slug}`"
           class="group rounded-2xl border border-slate-200 bg-white p-6 transition hover:border-teal-500 hover:shadow-md"
@@ -77,9 +78,9 @@ const { data: trending } = await useAsyncData('trending-products', () =>
           <p class="text-xs font-bold uppercase tracking-widest text-teal-700">
             {{ category.sub_categories?.length || 0 }} departments
           </p>
-          <h3 class="mt-2 text-2xl font-black">{{ category.name }}</h3>
+          <h3 class="mt-2 text-2xl font-black">{{ toTitleCase(category.name) }}</h3>
           <p class="mt-4 text-sm text-slate-500">
-            {{ category.sub_categories?.map((sub: Category) => sub.name).join(' · ') }}
+            {{ category.sub_categories?.map((sub: Category) => toTitleCase(sub.name)).join(' · ') }}
           </p>
           <span class="mt-5 block font-bold text-slate-900">Shop category →</span>
         </NuxtLink>
@@ -97,7 +98,7 @@ const { data: trending } = await useAsyncData('trending-products', () =>
           <NuxtLink to="/products" class="font-semibold text-teal-700">View all →</NuxtLink>
         </div>
         <div class="mt-7 grid grid-cols-2 gap-4 md:grid-cols-4">
-          <ProductCard v-for="product in featured.items" :key="product.slug" :product="product" />
+          <ProductCard v-for="product in featured.items" :key="product.slug" :product="product as ProductDetail" />
         </div>
       </div>
     </section>
@@ -131,7 +132,7 @@ const { data: trending } = await useAsyncData('trending-products', () =>
         <NuxtLink to="/products" class="font-semibold text-teal-700">Browse all →</NuxtLink>
       </div>
       <div class="mt-7 grid grid-cols-2 gap-4 md:grid-cols-4">
-        <ProductCard v-for="product in trending.items" :key="product.slug" :product="product" />
+        <ProductCard v-for="product in trending.items" :key="product.slug" :product="product as ProductDetail" />
       </div>
     </section>
   </div>

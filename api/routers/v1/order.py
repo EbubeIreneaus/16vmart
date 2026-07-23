@@ -118,6 +118,7 @@ async def checkout(
     stripe_session = await stripe_checkout(order, user)
     return {"success": True, "url": stripe_session.url}
 
+
 @router.get("/orders")
 async def get_orders(
     request: Request,
@@ -143,7 +144,9 @@ async def get_orders(
         .options(
             selectinload(Order.delivery_address),
             selectinload(Order.items).options(
-                selectinload(OrderProduct.product).options(selectinload(Product.images))
+                selectinload(OrderProduct.product).options(
+                    selectinload(Product.images), selectinload(Product.category)
+                )
             ),
         )
         .where(Order.order_number == order_number, Order.user_id == user.id)
@@ -176,8 +179,8 @@ async def stripe_checkout(order: SingleOrderOut, user: UserShema):
                 "currency": "usd",
                 "customer_creation": "if_required",
                 "client_reference_id": order.order_number,
-                "cancel_url": "https://example.com/cancel",
-                "success_url": "https://example.com/success",
+                "cancel_url": f"{setting.APP_URL}/checkout/cancel?order_number={order.order_number}",
+                "success_url": f"{setting.APP_URL}/checkout/success?order_number={order.order_number}",
                 "customer_email": user.email,
                 "metadata": {"customer_fullname": user.fullname},
             },
@@ -185,10 +188,11 @@ async def stripe_checkout(order: SingleOrderOut, user: UserShema):
         )
         return session
     except stripe.error.StripeError as e:
+        print(e)
         raise HTTPException(
-            status.HTTP_424_FAILED_DEPENDENCY,
-            detail="stripe payment error"
+            status.HTTP_424_FAILED_DEPENDENCY, detail="stripe payment error"
         )
+
 
 @router.post("/stripe-webhook", include_in_schema=False)
 async def stripe_webhook(request: Request):
@@ -196,10 +200,12 @@ async def stripe_webhook(request: Request):
     sig_header = request.headers.get("stripe-signature")
 
     try:
-        event = stripe.Webhook.construct_event(payload, sig_header, setting.STRIPE_HOOK_SECRET)
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, setting.STRIPE_HOOK_SECRET
+        )
     except (ValueError, stripe.error.SignatureVerificationError):
         raise HTTPException(status_code=400, detail="Invalid signature")
-    
+
     arq = await get_arq_pool()
 
     match event["type"]:
