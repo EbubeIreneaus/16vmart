@@ -24,6 +24,12 @@ class CategorySchemaIn(BaseCategorySchema):
     attributes: Optional[List[BaseAttributeKeySchema]] = Field(default=None)
     sub_categories: Optional[List[CategorySchemaIn]] = Field(default=None)
 
+class CategoryUpdateSchema(BaseModel):
+    name: Optional[str] = None
+    attributes: Optional[List[BaseAttributeKeySchema]] = None
+    sub_categories: Optional[List[CategorySchemaIn]] = None
+
 class AdminCategorySchema(CategorySchema):
+    id: int
     sub_categories: List[AdminCategorySchema]
-    attributes: List[AttributeKeySchema]
+    attributes: List[AttributeKeySchema]

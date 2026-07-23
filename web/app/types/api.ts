@@ -102,9 +102,10 @@ export interface AttributeKey {
 }
 
 export interface Category {
+  id: number;
   name: string;
   slug: string;
-  sub_categories: Category[];
+  sub_categories?: Category[];
 }
 
 export interface CategoryWithId extends Category {

@@ -34,6 +34,7 @@ class BaseProductImages(BaseModel):
     alt: Optional[str] = Field(default=None)
 
 class CategorySchema(BaseCategorySchema):
+    id: int
     slug: str
 
     model_config = ConfigDict(from_attributes=True)
