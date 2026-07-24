@@ -47,6 +47,7 @@ async def get_vendor_orders(
 
 
 @router.get("/{vid}")
+@router.get("/order/{vid}")
 async def get_vendor_order(
     request: Request,
     store_id: str,

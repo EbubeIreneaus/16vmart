@@ -116,6 +116,7 @@ async def checkout(
     db.add(order)
     await db.flush()
     stripe_session = await stripe_checkout(order, user)
+    await redis.delete(f"cart:{user.id}")
     return {"success": True, "url": stripe_session.url}
 
 
