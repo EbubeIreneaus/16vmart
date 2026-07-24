@@ -5,26 +5,30 @@ definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 const { api } = useApi()
 const currentPage = ref(1)
+const statusFilter = ref('all')
+const filterTabs = ['all', 'active', 'suspended', 'terminated', 'hibernating', 'under_review', 'deactivated']
+const statusOptions = ['active', 'suspended', 'terminated', 'hibernating', 'under_review', 'deactivated']
 
 const { data: response, pending, refresh } = await useAsyncData(
   'admin-stores',
   () => api<Page<Store>>('/admin/stores/all', {
-    params: { page: currentPage.value, size: 20 },
+    params: { page: currentPage.value, size: 20, s: statusFilter.value },
   }),
   {
     default: () => ({ items: [], total: 0, page: 1, size: 20, pages: 1 }),
-    watch: [currentPage],
+    watch: [currentPage, statusFilter],
   }
 )
 
 // Status update
-const statusOptions = ['active', 'suspended', 'terminated', 'hibernating', 'under_review', 'deactivated']
-
 async function updateStatus(slug: string, status: string) {
   await api('/admin/stores/update-status', {
     method: 'POST',
     body: { slug, status },
   })
+  if (searchResult.value && searchResult.value.slug.toLowerCase() === slug.toLowerCase()) {
+    searchResult.value.status = status as any
+  }
   await refresh()
 }
 
@@ -74,17 +78,36 @@ function changePage(page: number) {
 
     <!-- Search result -->
     <div v-if="searchResult" class="mt-4 rounded-2xl bg-teal-50 p-5 ring-1 ring-teal-200">
-      <div class="flex items-start justify-between">
+      <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p class="font-black">{{ searchResult.name }}</p>
           <p class="text-sm text-slate-500">{{ searchResult.industry }} · {{ searchResult.city }}, {{ searchResult.state }}</p>
           <p class="mt-1 text-xs text-slate-400">Owner: {{ searchResult.user?.fullname }} ({{ searchResult.user?.email }})</p>
         </div>
-        <span class="rounded-full px-3 py-1 text-xs font-bold capitalize bg-white">{{ searchResult.status.replace('_', ' ') }}</span>
+        <select
+          class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold capitalize"
+          :value="searchResult.status"
+          @change="updateStatus(searchResult.slug, ($event.target as HTMLSelectElement).value)"
+        >
+          <option v-for="s in statusOptions" :key="s" :value="s">{{ s.replace('_', ' ') }}</option>
+        </select>
       </div>
-      <button class="mt-2 text-sm font-bold text-teal-700" @click="searchResult = null">Close</button>
+      <button class="mt-3 text-xs font-bold text-teal-700 hover:underline" @click="searchResult = null">Close Search</button>
     </div>
     <p v-if="searchError" class="mt-4 text-sm text-rose-600">{{ searchError }}</p>
+
+    <!-- Status filter tabs -->
+    <div class="mt-5 flex flex-wrap gap-2">
+      <button
+        v-for="status in filterTabs"
+        :key="status"
+        class="rounded-lg px-3 py-1.5 text-xs font-bold capitalize"
+        :class="statusFilter === status ? 'bg-teal-700 text-white' : 'bg-white ring-1 ring-slate-200 hover:bg-slate-50'"
+        @click="statusFilter = status; currentPage = 1"
+      >
+        {{ status.replace('_', ' ') }}
+      </button>
+    </div>
 
     <!-- Store list -->
     <div v-if="pending" class="mt-5 space-y-3">

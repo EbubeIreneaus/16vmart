@@ -6,19 +6,20 @@ definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 const { api } = useApi()
 const currentPage = ref(1)
+const statusFilter = ref('all')
+const filterTabs = ['all', 'pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded', 'failed']
+const statusOptions = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded', 'failed']
 
 const { data: response, pending, refresh } = await useAsyncData(
   'admin-orders',
   () => api<Page<OrderMini>>('/admin/orders/', {
-    params: { page: currentPage.value, size: 20 },
+    params: { page: currentPage.value, size: 20, s: statusFilter.value },
   }),
   {
     default: () => ({ items: [], total: 0, page: 1, size: 20, pages: 1 }),
-    watch: [currentPage],
+    watch: [currentPage, statusFilter],
   }
 )
-
-const statusOptions = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded', 'failed']
 
 async function updateStatus(orderNumber: string, status: string) {
   await api(`/admin/orders/status/${orderNumber}`, {
@@ -52,31 +53,60 @@ function changePage(page: number) {
     <p class="text-sm font-bold uppercase tracking-widest text-teal-700">Platform oversight</p>
     <h1 class="mt-2 text-4xl font-black">Orders</h1>
 
-    <div v-if="pending" class="mt-7 space-y-3">
+    <!-- Status filter tabs -->
+    <div class="mt-5 flex flex-wrap gap-2">
+      <button
+        v-for="status in filterTabs"
+        :key="status"
+        class="rounded-lg px-3 py-1.5 text-xs font-bold capitalize"
+        :class="statusFilter === status ? 'bg-teal-700 text-white' : 'bg-white ring-1 ring-slate-200 hover:bg-slate-50'"
+        @click="statusFilter = status; currentPage = 1"
+      >
+        {{ status }}
+      </button>
+    </div>
+
+    <div v-if="pending" class="mt-5 space-y-3">
       <div v-for="i in 5" :key="i" class="h-16 animate-pulse rounded-lg bg-slate-200" />
     </div>
 
-    <div v-else class="mt-7 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+    <div v-else class="mt-5 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
       <div
         v-for="order in response.items"
         :key="order.order_number"
         class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 py-4 last:border-0"
       >
         <div>
-          <p class="font-black">{{ order.order_number }}</p>
-          <p class="text-sm text-slate-500">
+          <NuxtLink
+            :to="`/admin/orders/${order.order_number}`"
+            class="font-black text-slate-900 hover:text-teal-700 hover:underline flex items-center gap-2 text-base"
+          >
+            #{{ order.order_number }}
+          </NuxtLink>
+          <p class="text-xs text-slate-500 mt-0.5">
             Placed {{ new Date(order.created_at).toLocaleDateString('en-US', { dateStyle: 'medium' }) }}
           </p>
         </div>
-        <div class="flex items-center gap-3">
-          <span v-if="order.paid" class="text-xs font-bold text-emerald-600">Paid</span>
+        <div class="flex flex-wrap items-center gap-3">
+          <span
+            class="rounded-full px-2.5 py-0.5 text-xs font-bold capitalize"
+            :class="order.paid ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'"
+          >
+            {{ order.paid ? 'Paid' : 'Unpaid' }}
+          </span>
           <select
-            class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold capitalize"
+            class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-bold capitalize"
             :value="order.status"
             @change="updateStatus(order.order_number, ($event.target as HTMLSelectElement).value)"
           >
             <option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option>
           </select>
+          <NuxtLink
+            :to="`/admin/orders/${order.order_number}`"
+            class="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition"
+          >
+            View Details
+          </NuxtLink>
         </div>
       </div>
       <div v-if="response.items.length < 1" class="py-8 text-center text-slate-500">

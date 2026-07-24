@@ -22,18 +22,16 @@ router = APIRouter(prefix="/stores")
 
 @router.get("/all", response_model=Page[MiniStoreOut])
 async def get_all_store(
-    s: str | None = None,
+    s: Optional[STORE_STATUS | Literal["all"]] = "all",
     admin: UserShema = Depends(get_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    condition = Store.status == STORE_STATUS.ACTIVE
+    stmt = select(Store).options(selectinload(Store.user))
 
-    if s:
-        status = [x.upper() for x in s.split(",")]
-        condition = Store.status.in_(status)
+    if s != "all":
+        stmt = stmt.where(Store.status == s)
 
-    stmt = select(Store).options(selectinload(Store.user)).where(condition)
-
+    stmt = stmt.order_by(Store.id.desc())
     result = await paginate(db, stmt)
     return result
 
