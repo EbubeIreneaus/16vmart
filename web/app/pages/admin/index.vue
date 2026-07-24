@@ -6,21 +6,12 @@ definePageMeta({ layout: 'admin', middleware: 'admin' })
 const { api } = useApi()
 const auth = useAuthStore()
 
-// Fetch totals from paginated endpoints (size=1 to get just the total count)
-const { data: stats } = await useAsyncData('admin-stats', async () => {
-  const [users, stores, orders] = await Promise.allSettled([
-    api<Page<User>>('/admin/users/all', { params: { page: 1, size: 1, s: 'active' } }),
-    api<Page<Store>>('/admin/stores/all', { params: { page: 1, size: 1 } }),
-    api<Page<OrderMini>>('/admin/orders/', { params: { page: 1, size: 1 } }),
-  ])
-  return {
-    users: users.status === 'fulfilled' ? users.value.total : 0,
-    stores: stores.status === 'fulfilled' ? stores.value.total : 0,
-    orders: orders.status === 'fulfilled' ? orders.value.total : 0,
-  }
-}, {
-  default: () => ({ users: 0, stores: 0, orders: 0 }),
-})
+// Fetch metadata for admin dashboard
+const { data: stats } = await useAsyncData(
+  'admin-stats',
+  () => api<{ users: number; stores: number; orders: number }>('/admin/metadata'),
+  { default: () => ({ users: 0, stores: 0, orders: 0 }) }
+)
 </script>
 
 <template>

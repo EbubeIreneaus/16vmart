@@ -43,20 +43,17 @@ watch(parent, () => {
 const { data: response, pending, refresh } = await useAsyncData(
   'products-list',
   async () => {
-    const targetCategory = subCategory.value || parent.value
-
-    if (query.value && query.value.trim().length >= 3) {
-      return $fetch<Page<Product>>(`${config.public.apiUrl}/products/search`, {
-        params: { s: query.value.trim(), page: currentPage.value, size: pageSize },
-      })
-    }
-    if (targetCategory) {
-      return $fetch<Page<Product>>(`${config.public.apiUrl}/products/cat/${targetCategory}`, {
-        params: { page: currentPage.value, size: pageSize },
-      })
-    }
-    return $fetch<Page<Product>>(`${config.public.apiUrl}/products/feature`, {
-      params: { page: currentPage.value, size: pageSize },
+    return $fetch<Page<Product>>(`${config.public.apiUrl}/products/filter`, {
+      params: {
+        q: query.value || undefined,
+        category: parent.value || undefined,
+        sub_category: subCategory.value || undefined,
+        min_price: minPrice.value || undefined,
+        max_price: maxPrice.value || undefined,
+        condition: condition.value || undefined,
+        page: currentPage.value,
+        size: pageSize,
+      },
     })
   },
   {
