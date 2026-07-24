@@ -45,7 +45,6 @@ async function searchStore() {
       params: { s: searchQuery.value.trim() },
     })
     if (results.items.length > 0) {
-      // Get full detail of first result
       searchResult.value = await api<StoreWithUser>(`/admin/stores/${results.items[0].slug}`)
     } else {
       searchError.value = 'No stores found'
@@ -121,7 +120,12 @@ function changePage(page: number) {
         class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 py-4 last:border-0"
       >
         <div>
-          <p class="font-black">{{ store.name }}</p>
+          <NuxtLink
+            :to="`/admin/stores/${store.slug}`"
+            class="font-black text-slate-900 hover:text-teal-700 hover:underline text-base"
+          >
+            {{ store.name }}
+          </NuxtLink>
           <p class="text-sm text-slate-500">{{ store.industry }} · {{ store.city }}</p>
         </div>
         <select

@@ -50,14 +50,14 @@ async def update_status(
 @router.get("/")
 async def get_orders(
     request: Request,
-    s: Optional[str] = None,
+    s: Optional[ORDER_STATUS | Literal["all"]] = "all",
     admin: UserShema = Depends(get_admin),
     db: AsyncSession = Depends(get_db),
 ) -> Page[BaseOrderMini]:
-    
     stmt = select(Order)
-    if s and s.strip() and s.lower().strip() != "all":
-        stmt = stmt.where(func.lower(Order.status) == s.lower().strip())
+    
+    if s != "all":
+        stmt = stmt.where(Order.status == s)
 
     stmt = stmt.order_by(Order.created_at.desc())
     result = await paginate(db, stmt)

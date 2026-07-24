@@ -23,16 +23,14 @@ router = APIRouter(prefix="/users")
 
 @router.get("/all", response_model=Page[MiniUserResp])
 async def get_all_users(
-    s: Optional[str] = None,
+    s: Optional[STATUS | Literal["all"]] = "all",
     db: AsyncSession = Depends(get_db),
     admin: UserShema = Depends(get_admin),
 ):
     stmt = select(User)
 
-    if s and s.strip() and s.lower().strip() != "all":
-        statuses = [x.lower().strip() for x in s.split(",") if x.strip()]
-        if statuses:
-            stmt = stmt.where(func.lower(User.status).in_(statuses))
+    if s != "all":
+        stmt = stmt.where(User.status == s)
 
     stmt = stmt.order_by(User.id.desc())
     result = await paginate(db, stmt)

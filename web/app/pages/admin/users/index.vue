@@ -138,7 +138,12 @@ function changePage(page: number) {
         class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 py-4 last:border-0"
       >
         <div>
-          <p class="font-black">{{ user.fullname }}</p>
+          <NuxtLink
+            :to="`/admin/users/${user.email}`"
+            class="font-black text-slate-900 hover:text-teal-700 hover:underline text-base"
+          >
+            {{ user.fullname }}
+          </NuxtLink>
           <p class="text-sm text-slate-500">{{ user.email }}</p>
         </div>
         <div class="flex flex-wrap gap-2 items-center">

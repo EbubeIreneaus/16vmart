@@ -28,7 +28,7 @@ export default defineNuxtConfig({
   },
   vite: {
     server: {
-      allowedHosts: ["localhost", "localhost:3000", "da74-102-91-97-173.ngrok-free.app"]
+      allowedHosts: ["localhost", "localhost:3000", ".ngrok-free.app"]
     }
   }
 })
