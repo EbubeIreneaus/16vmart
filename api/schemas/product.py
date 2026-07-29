@@ -48,7 +48,7 @@ class CategorySchema(BaseCategorySchema):
     model_config = ConfigDict(from_attributes=True)
  
 class CategorySchemaResponse(CategorySchema):
-    sub_categories: Optional[List[CategorySchema]] = Field(default=None)
+    sub_categories: Optional[List["CategorySchema"]] = Field(default=None)
 
 
 class ProuctAttribute(BaseModel):

@@ -25,13 +25,13 @@ class User(Base):
     role: Mapped[ROLE] = mapped_column(Enum(ROLE), default=ROLE.USER)
     status: Mapped[STATUS] = mapped_column(Enum(STATUS), default=STATUS.ACTIVE)
     password: Mapped[str] = mapped_column(String, nullable=True)
-    orders: Mapped[List[Order]] = relationship(back_populates="user")
-    wishlists: Mapped[List[Wishlist]] = relationship(back_populates="user",  cascade="all, delete-orphan")  
-    addresses: Mapped[List[Address]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    orders: Mapped[List["Order"]] = relationship(back_populates="user")
+    wishlists: Mapped[List["Wishlist"]] = relationship(back_populates="user",  cascade="all, delete-orphan")  
+    addresses: Mapped[List["Address"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     sessions: Mapped[List["Session"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
-    stores: Mapped[List[Store]] = relationship(
+    stores: Mapped[List["Store"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
 
@@ -97,10 +97,10 @@ class Store(Base):
     address: Mapped[str] = mapped_column(String)
     industry: Mapped[str] = mapped_column(String)
     email: Mapped[EmailStr] = mapped_column(String)
-    vendors_orders: Mapped[List[VendorOrder]] = relationship(back_populates="store")
+    vendors_orders: Mapped[List["VendorOrder"]] = relationship(back_populates="store")
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     status: Mapped[STORE_STATUS] = mapped_column(Enum(STORE_STATUS), default=STORE_STATUS.ACTIVE)
-    products: Mapped[List[Product]] = relationship(back_populates="store", cascade="all, delete-orphan")
+    products: Mapped[List["Product"]] = relationship(back_populates="store", cascade="all, delete-orphan")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

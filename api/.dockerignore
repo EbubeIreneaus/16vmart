@@ -4,3 +4,6 @@
 seed_categories.py
 seed_products.py
 seed_data
+
+pyproject.toml
+uv.lcok

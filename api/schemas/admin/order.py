@@ -12,7 +12,7 @@ from schemas.store.order import BaseVendorOrder
 from schemas.user import UserShema
 
 class AdminSingleOrderOut(SingleOrderOut):
-    vendors: List[MiniVendorOrder]
+    vendors: List["MiniVendorOrder"]
     user: UserShema
 
 class UpdateOrderSchema(BaseModel):
