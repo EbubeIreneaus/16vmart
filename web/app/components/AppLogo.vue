@@ -1,0 +1,1 @@
+<template><NuxtLink to="/" class="flex items-center gap-2 font-black tracking-tight text-slate-950"><span class="grid size-8 place-items-center rounded-xl bg-teal-700 text-lg text-white">16</span><span>Vmart</span></NuxtLink></template>

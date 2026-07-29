@@ -1,0 +1,6 @@
+.venv
+.env
+
+seed_categories.py
+seed_products.py
+seed_data

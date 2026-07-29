@@ -1,0 +1,23 @@
+export const INDUSTRY_CHOICES = [
+  "Technology",
+  "Healthcare",
+  "Finance",
+  "Education",
+  "Manufacturing",
+  "Agriculture",
+  "Energy",
+  "Transportation",
+  "Retail",
+  "Hospitality",
+  "Fashion & accessories",
+  "Food & restaurants",
+  "Health & wellness",
+  "Beauty & cosmetics",
+  "Home & furniture",
+  "Automotive",
+  "Real estate",
+  "Entertainment",
+  "Sports & fitness",
+  "Pets & animals",
+  "Others"
+];

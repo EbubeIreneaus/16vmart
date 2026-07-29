@@ -1,0 +1,11 @@
+*.venv
+*.env
+api/seed_categories.py
+api/seed_products.py
+api/seed_data
+
+web/.nuxt
+web/.output
+web/node_modules
+web/product-images
+

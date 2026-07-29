@@ -1,0 +1,151 @@
+name: CI & E2E Testing Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    name: Build, Pytest & Playwright E2E Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: 16vmart
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install API dependencies
+        run: |
+          cd api
+          uv sync --frozen || uv sync
+
+      - name: Run Alembic DB Migrations
+        run: |
+          cd api
+          uv run alembic upgrade head
+        env:
+          DB_URL: postgresql+asyncpg://postgres:postgrespassword@localhost:5432/16vmart
+          JWT_SECRET: test_jwt_secret_key_1234567890
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          MAIL_USER: test@example.com
+          MAIL_HOST: smtp.example.com
+          MAIL_PASS: secret
+          MAIL_FROM: test@example.com
+          MAIL_FROM_NAME: 16vmart
+          CLOUDINARY_NAME: test
+          CLOUDINARY_SECRET: test
+          CLOUDINARY_KEY: test
+          STRIPE_SECRET: test
+          STRIPE_HOOK_SECRET: test
+          APP_URL: http://localhost:3000
+
+      - name: Run Pytest Backend Unit Tests
+        run: |
+          cd api
+          uv run pytest
+        env:
+          DB_URL: postgresql+asyncpg://postgres:postgrespassword@localhost:5432/16vmart
+          JWT_SECRET: test_jwt_secret_key_1234567890
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          MAIL_USER: test@example.com
+          MAIL_HOST: smtp.example.com
+          MAIL_PASS: secret
+          MAIL_FROM: test@example.com
+          MAIL_FROM_NAME: 16vmart
+          CLOUDINARY_NAME: test
+          CLOUDINARY_SECRET: test
+          CLOUDINARY_KEY: test
+          STRIPE_SECRET: test
+          STRIPE_HOOK_SECRET: test
+          APP_URL: http://localhost:3000
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install Web dependencies
+        run: |
+          cd web
+          npm install
+
+      - name: Install Playwright Browsers
+        run: |
+          cd web
+          npx playwright install --with-deps
+
+      - name: Start FastAPI Backend Service
+        run: |
+          cd api
+          uv run uvicorn main:app --host 0.0.0.0 --port 8000 &
+        env:
+          DB_URL: postgresql+asyncpg://postgres:postgrespassword@localhost:5432/16vmart
+          JWT_SECRET: test_jwt_secret_key_1234567890
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          MAIL_USER: test@example.com
+          MAIL_HOST: smtp.example.com
+          MAIL_PASS: secret
+          MAIL_FROM: test@example.com
+          MAIL_FROM_NAME: 16vmart
+          CLOUDINARY_NAME: test
+          CLOUDINARY_SECRET: test
+          CLOUDINARY_KEY: test
+          STRIPE_SECRET: test
+          STRIPE_HOOK_SECRET: test
+          APP_URL: http://localhost:3000
+
+      - name: Build & Start Nuxt Server & Run Playwright Tests
+        run: |
+          cd web
+          npm run build
+          node .output/server/index.mjs &
+          npx playwright test
+        env:
+          CI: true
+          PORT: 3000
+          HOST: 0.0.0.0
+          PLAYWRIGHT_TEST_BASE_URL: http://localhost:3000
+          NUXT_API_SERVER_URL: http://localhost:8000/api/v1
+          NUXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+
+      - name: Upload Playwright Report on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: web/playwright-report/
+          retention-days: 30

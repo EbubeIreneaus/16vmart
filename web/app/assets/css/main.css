@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+:root { --ui-primary: #0f766e; }
+body { font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif; background: #f8fafc; color: #172033; }
+* { box-sizing: border-box; }

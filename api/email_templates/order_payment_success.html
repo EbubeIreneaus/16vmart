@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Payment Received</title>
+  </head>
+  <body style="font-family: Arial, sans-serif; background-color: #f7f7f7; padding: 20px;">
+    <div style="max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 8px;">
+      <h2 style="color: #15803d;">Payment Received Successfully</h2>
+      <p style="color: #555; font-size: 16px;">
+        Hello {{ customer_name }},
+      </p>
+      <p style="color: #555; font-size: 16px;">
+        We have successfully received your payment for order <strong>#{{ order_id }}</strong>.
+      </p>
+      <p style="color: #555; font-size: 16px;">
+        Amount paid: <strong>{{ amount }}</strong>
+      </p>
+      <p style="color: #555; font-size: 16px;">
+        Transaction reference: <strong>{{ transaction_id }}</strong>
+      </p>
+      <p style="color: #777; font-size: 14px; margin-top: 20px;">
+        Thank you for your purchase.
+      </p>
+    </div>
+  </body>
+</html>

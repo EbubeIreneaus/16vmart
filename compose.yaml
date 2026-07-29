@@ -1,0 +1,42 @@
+services:
+    api:
+        build: ./api
+        container_name: api
+        working_dir: /app
+        command: uvicorn main:app --reload --host 0.0.0.0 --port 8000
+        environment:
+            - REDIS_HOST=redis
+            - PATH=/app/.venv/bin:$PATH
+        env_file:
+            - ./api/.env
+        ports:
+            - "8000:8000"
+        volumes:
+            - ./api:/app
+            - /app/.venv
+        depends_on:
+            - redis
+
+    bg_worker:
+        build: ./api
+        container_name: ARQ_BG_WORKER
+        command: arq bg_task.config.WorkerSettings
+        environment:
+            - REDIS_HOST=redis
+            - PATH=/app/.venv/bin:$PATH
+        env_file:
+            - ./api/.env
+        depends_on:
+            - redis
+        volumes:
+            - /app/.venv
+            
+    redis:
+        image: redis:7-alpine
+        container_name: redis
+        environment:
+            - HOST=localhost
+            - PORT=6379
+        ports:
+            - "6379:6379"
+    
