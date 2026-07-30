@@ -9,6 +9,7 @@ class Setting(BaseSettings):
     REDIS_PORT: int
     REDIS_PASS: Optional[str] = None
     REDIS_USER: Optional[str] = None    
+    REDIS_SSL: bool = False
 
     MAIL_USER: str
     MAIL_HOST: str 

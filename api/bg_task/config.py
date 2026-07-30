@@ -5,7 +5,11 @@ from .auth import update_session, send_welcome_email
 from .order import update_order, create_vendor_orders
 
 REDIS_SETTING = RedisSettings(
-    host=setting.REDIS_HOST, port=setting.REDIS_PORT, password=setting.REDIS_PASS, username=setting.REDIS_USER
+    host=setting.REDIS_HOST,
+    port=setting.REDIS_PORT,
+    password=setting.REDIS_PASS,
+    username=setting.REDIS_USER,
+    ssl=setting.REDIS_SSL,
 )
 
 
@@ -18,3 +22,4 @@ class WorkerSettings:
     functions = [update_session, send_welcome_email, update_order, create_vendor_orders]
     redis_settings = REDIS_SETTING
     queue_name = "16vmart"
+    pool_delay = 3600

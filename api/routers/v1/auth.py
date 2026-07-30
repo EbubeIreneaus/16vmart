@@ -84,7 +84,7 @@ async def signup(
             email=email,
             password=hashed_password,
         )
-        client_ip = x_forwarded_for if x_forwarded_for else request.client.host
+        client_ip = x_forwarded_for.split(',')[0] if x_forwarded_for else request.client.host
 
         new_session = SessionModel(
             user=new_user,
@@ -113,6 +113,7 @@ async def signup(
             token,
             expires=access_token_expired_at,
             samesite="lax",
+            domain=f".{setting.APP_URL}",
             secure=IS_SECURE,
         )
         response.set_cookie(
@@ -121,6 +122,7 @@ async def signup(
             expires=refresh_token_expired_at,
             httponly=True,
             samesite="lax",
+            domain=f".{setting.APP_URL}",
             secure=IS_SECURE,
         )
 
@@ -192,7 +194,7 @@ async def signin(
                 detail="This account is under review, we will notify you once our descision has been made",
             )
 
-        ip = x_forwarded_for if x_forwarded_for else request.client.host
+        ip = x_forwarded_for.split(',')[0] if x_forwarded_for else request.client.host
         refresh_token = secrets.token_urlsafe(30)
         refresh_hash = hashlib.sha256(refresh_token.encode()).hexdigest()
 
@@ -231,6 +233,7 @@ async def signin(
             token,
             expires=access_token_expired_at,
             samesite="lax",
+            domain=f".{setting.APP_URL}",
             secure=IS_SECURE,
         )
         response.set_cookie(
@@ -239,6 +242,7 @@ async def signin(
             expires=refresh_token_expired_at,
             httponly=True,
             samesite="lax",
+            domain=f".{setting.APP_URL}",
             secure=IS_SECURE,
         )
 
@@ -329,6 +333,7 @@ async def refresh_token(
         token,
         expires=access_token_expire_at,
         samesite="lax",
+        domain=f".{setting.APP_URL}",
         secure=IS_SECURE,
     )
     response.set_cookie(
@@ -337,6 +342,7 @@ async def refresh_token(
         expires=refresh_token_exp_at,
         httponly=True,
         samesite="lax",
+        domain=f".{setting.APP_URL}",
         secure=IS_SECURE,
     )
 
@@ -370,8 +376,8 @@ async def signout(
         except Exception:
             pass
 
-    response.delete_cookie("access_token", path="/")
-    response.delete_cookie("refresh_token", path="/")
+    response.delete_cookie("access_token", path="/", domain=f".{setting.APP_URL}")
+    response.delete_cookie("refresh_token", path="/", domain=f".{setting.APP_URL}")
     return {"success": True}
 
 
@@ -422,7 +428,7 @@ async def send_reset_link(
     url = f"{setting.APP_URL}/auth/reset/{key_url}-16vmart-{long_url}"
     obj = {"email": email, "key": long_url}
     json_obj = json.dumps(obj)
-    ip = x_forwarded_for if x_forwarded_for else request.client.host
+    ip = x_forwarded_for.split(',')[0] if x_forwarded_for else request.client.host
     await redis.set(f"16vmart:passwordReset:{ip}:{key_url}", json_obj, ex=3600)
     logger.info(f"Generated password reset link for user {email}: {url}")
     # send long url to email
@@ -447,7 +453,7 @@ async def validate_reset_link(
     _q = q.split("-16vmart-")
     key_url = _q[0]
     long_url = _q[1]
-    ip = x_forwarded_for if x_forwarded_for else request.client.host
+    ip = x_forwarded_for.split(',')[0] if x_forwarded_for else request.client.host
 
     result = await redis.get(f"16vmart:passwordReset:{ip}:{key_url}")
     if not result:
@@ -479,7 +485,7 @@ async def reset_password(
     token = body.token.split("-16vmart-")
     key_url = token[0]
     long_url = token[1]
-    ip = x_forwarded_for if x_forwarded_for else request.client.host
+    ip = x_forwarded_for.split(',')[0] if x_forwarded_for else request.client.host
 
     result = await redis.get(f"16vmart:passwordReset:{ip}:{key_url}")
 

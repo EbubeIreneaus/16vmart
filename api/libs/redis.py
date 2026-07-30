@@ -7,4 +7,6 @@ redis = Redis(
     port=setting.REDIS_PORT,
     password=setting.REDIS_PASS,
     username=setting.REDIS_USER,
+    ssl=setting.REDIS_SSL,
+    decode_responses=True
 )

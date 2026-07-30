@@ -1,3 +1,4 @@
+from arq import Worker
 from settings import setting
 from fastapi import FastAPI, Depends
 from routers.v1 import cat, product
@@ -14,15 +15,36 @@ from fastapi_pagination import add_pagination
 from fastapi.middleware.cors import CORSMiddleware
 from libs.limiter import limiter
 from libs.logger import logger
+from arq import run_worker
+import asyncio
+from bg_task.config import WorkerSettings
 
 app = FastAPI()
 app.state.limiter = limiter
+
+worker_instance = None
+
+@app.on_event("startup")
+async def start_worker():
+    global worker_instance
+    worker_instance = Worker(
+        functions=WorkerSettings.functions,
+        redis_settings=WorkerSettings.redis_settings,
+        poll_delay=WorkerSettings.pool_delay,
+        queue_name=WorkerSettings.queue_name
+    )
+    asyncio.create_task(worker_instance.async_run())
+
+@app.on_event("shutdown")
+async def shutdown_worker():
+    if worker_instance:
+        await worker_instance.close()
 
 logger.info("Initializing 16vmart FastAPI Application...")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", setting.APP_URL],
+    allow_origins=[f"https://{setting.APP_URL}"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

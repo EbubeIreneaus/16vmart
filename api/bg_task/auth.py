@@ -1,3 +1,4 @@
+from settings import setting
 from models.db import AsyncSessionLocal
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -42,9 +43,9 @@ async def update_session(ctx, session_id, user_agent_string):
 async def send_welcome_email(ctx, email, fullname):
     try:
         message = MessageSchema(
-            subject="Welcome to Ecommerce Store",
+            subject="Welcome to 16vmart - Your Trusted Marketplace",
             recipients=[email],
-            template_body={"fullname": fullname},
+            template_body={"fullname": fullname, "url": f"https://{setting.APP_URL}/products"},
             subtype=MessageType.html
         )
         fm = FastMail(conf)
