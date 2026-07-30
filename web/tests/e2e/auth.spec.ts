@@ -52,14 +52,15 @@ test.describe('Authentication Lifecycle', () => {
     expect(accessToken).toBeDefined()
   })
 
-  test('should support session Refresh Token invocation', async ({ page, request }) => {
+  test('should support session Refresh Token invocation', async ({ page }) => {
     await page.goto('/auth/login')
-    await page.getByPlaceholder('[data-test-id="email"]').fill(testUser.email)
+    await page.locator('[data-test-id="email"]').fill(testUser.email)
     await page.locator('[data-test-id="password"]').fill(testUser.password)
     await page.locator('[data-test-id="submit-btn"]').click()
     await expect(page).toHaveURL('/')
 
-    const response = await request.post('/api/v1/auth/refresh-token')
+    const apiUrl = process.env.NUXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
+    const response = await page.request.post(`${apiUrl}/auth/refresh-token`)
     expect([200, 401, 403]).toContain(response.status())
   })
 })
