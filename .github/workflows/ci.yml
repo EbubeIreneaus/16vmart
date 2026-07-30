@@ -40,18 +40,18 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-
       - name: Install API dependencies
         run: |
           cd api
-          uv sync --frozen || uv sync
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
 
       - name: Run Alembic DB Migrations
         run: |
           cd api
-          uv run alembic upgrade head
+          source .venv/bin/activate
+          alembic upgrade head
         env:
           DB_URL: postgresql+asyncpg://postgres:postgrespassword@localhost:5432/16vmart
           JWT_SECRET: test_jwt_secret_key_1234567890
@@ -73,7 +73,8 @@ jobs:
       - name: Run Pytest Backend Unit Tests
         run: |
           cd api
-          uv run pytest
+          source .venv/bin/activate
+          python -m pytest
         env:
           DB_URL: postgresql+asyncpg://postgres:postgrespassword@localhost:5432/16vmart
           JWT_SECRET: test_jwt_secret_key_1234567890
@@ -112,7 +113,8 @@ jobs:
       - name: Start FastAPI Backend Service
         run: |
           cd api
-          uv run uvicorn main:app --host 0.0.0.0 --port 8000 &
+          source .venv/bin/activate
+          uvicorn main:app --host 0.0.0.0 --port 8000 &
         env:
           DB_URL: postgresql+asyncpg://postgres:postgrespassword@localhost:5432/16vmart
           JWT_SECRET: test_jwt_secret_key_1234567890
