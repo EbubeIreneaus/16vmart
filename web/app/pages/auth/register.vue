@@ -22,6 +22,7 @@
             v-model="form.fullname"
             class="mt-2 w-full rounded-lg border border-slate-300 p-3"
             minlength="3"
+            data-test-id="fullname"
         /></label>
         <span
           v-if="errorFields.fullname"
@@ -33,6 +34,7 @@
             v-model="form.email"
             type="email"
             class="mt-2 w-full rounded-lg border border-slate-300 p-3"
+            data-test-id="email"
         /></label>
         <span
           v-if="errorFields.email"
@@ -45,10 +47,12 @@
             type="password"
             class="mt-2 w-full rounded-lg border border-slate-300 p-3"
             minlength="6"
+            data-test-id="password"
           />
           <span
             v-if="errorFields.password"
             class="mt-1 block text-xs font-medium text-rose-600"
+            data-test-id="password-error"
             >{{ errorFields.password }}</span
           > </label
         ><u-button
@@ -56,6 +60,7 @@
           :ui="{
             base: 'justify-center'
           }"
+          data-test-id="submit-btn"
           type="submit"
           label="Create account"
           :loading="isLoading"

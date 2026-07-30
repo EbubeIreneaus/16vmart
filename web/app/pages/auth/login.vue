@@ -19,6 +19,7 @@
         <label class="block text-sm font-bold"
           >Email<input
             v-model.trim="form.email"
+            data-test-id="email"
             type="email"
             autocomplete="email"
             :aria-invalid="Boolean(fieldErrors.email)"
@@ -35,6 +36,7 @@
         <label class="block text-sm font-bold"
           >Password<input
             v-model="form.password"
+            data-test-id="password"
             type="password"
             autocomplete="current-password"
             :aria-invalid="Boolean(fieldErrors.password)"
@@ -49,6 +51,7 @@
           >{{ fieldErrors.password }}</span
         >
         <button
+          data-test-id="submit-btn"
           :disabled="isSubmitting"
           class="w-full rounded-xl bg-teal-700 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
         >
@@ -58,11 +61,11 @@
       <div class="mt-5 flex items-center justify-between text-sm text-slate-600">
         <p>
           New here?
-          <NuxtLink to="/auth/register" class="font-bold text-teal-700">
+          <NuxtLink to="/auth/register" data-test-id="register-link" class="font-bold text-teal-700">
             Create an account</NuxtLink
           >
         </p>
-        <NuxtLink to="/auth/forgot-password" class="font-bold text-teal-700">
+        <NuxtLink to="/auth/forgot-password" data-test-id="forgot-password-link" class="font-bold text-teal-700">
           Forgot password?
         </NuxtLink>
       </div>

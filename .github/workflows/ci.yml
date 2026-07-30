@@ -105,7 +105,7 @@ jobs:
       - name: Install Playwright Browsers
         run: |
           cd web
-          npx playwright install --with-deps
+          npx playwright install chromium
 
       - name: Start FastAPI Backend Service
         run: |

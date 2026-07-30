@@ -9,6 +9,9 @@ product-images
 # Node dependencies
 node_modules
 
+playwright-report
+test-results
+
 # Logs
 logs
 *.log

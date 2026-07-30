@@ -13,13 +13,13 @@ test.describe('Authentication Lifecycle', () => {
     await expect(page.locator('h1')).toContainText('Sign in to 16Vmart')
     const emailInput = page.getByPlaceholder('you@example.com')
     await expect(emailInput).toBeVisible()
-    const submitBtn = page.getByRole('button', { name: 'Sign in' })
+    const submitBtn = page.locator('[data-test-id="submit-btn"]')
     await expect(submitBtn).toBeVisible()
   })
 
   test('should navigate between sign in and register pages', async ({ page }) => {
     await page.goto('/auth/login')
-    await page.click('text=Create an account')
+    await page.locator('[data-test-id="register-link"]').click()
     await expect(page).toHaveURL(/\/auth\/register/)
     await expect(page.locator('h1')).toContainText('Create your account')
   })
@@ -28,23 +28,22 @@ test.describe('Authentication Lifecycle', () => {
     await page.goto('/auth/register')
     await expect(page.locator('h1')).toContainText('Create your account')
 
-    await page.locator('input[type="text"]').first().fill(testUser.fullname)
-    await page.locator('input[type="email"]').fill(testUser.email)
-    await page.locator('input[type="password"]').fill(testUser.password)
+    await page.locator('[data-test-id="fullname"]').fill(testUser.fullname)
+    await page.locator('[data-test-id="email"]').fill(testUser.email)
+    await page.locator('[data-test-id="password"]').fill(testUser.password)
 
-    await page.getByRole('button', { name: 'Create account' }).click()
+    await page.locator('[data-test-id="submit-btn"]').click()
 
-    // Upon successful registration, app navigates to homepage or user dashboard
     await expect(page).toHaveURL('/', { timeout: 10000 })
   })
 
   test('should perform Signin (Login) flow with registered credentials', async ({ page }) => {
     await page.goto('/auth/login')
 
-    await page.getByPlaceholder('you@example.com').fill(testUser.email)
-    await page.locator('input[type="password"]').fill(testUser.password)
+    await page.locator('[data-test-id="email"]').fill(testUser.email)
+    await page.locator('[data-test-id="password"]').fill(testUser.password)
 
-    await page.getByRole('button', { name: 'Sign in' }).click()
+    await page.locator('[data-test-id="submit-btn"]').click()
 
     await expect(page).toHaveURL('/', { timeout: 10000 })
 
@@ -55,9 +54,9 @@ test.describe('Authentication Lifecycle', () => {
 
   test('should support session Refresh Token invocation', async ({ page, request }) => {
     await page.goto('/auth/login')
-    await page.getByPlaceholder('you@example.com').fill(testUser.email)
-    await page.locator('input[type="password"]').fill(testUser.password)
-    await page.getByRole('button', { name: 'Sign in' }).click()
+    await page.getByPlaceholder('[data-test-id="email"]').fill(testUser.email)
+    await page.locator('[data-test-id="password"]').fill(testUser.password)
+    await page.locator('[data-test-id="submit-btn"]').click()
     await expect(page).toHaveURL('/')
 
     const response = await request.post('/api/v1/auth/refresh-token')
