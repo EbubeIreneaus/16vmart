@@ -44,7 +44,7 @@ logger.info("Initializing 16vmart FastAPI Application...")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[f"https://{setting.APP_URL}"],
+    allow_origins=[setting.APP_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

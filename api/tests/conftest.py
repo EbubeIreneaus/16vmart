@@ -48,7 +48,7 @@ async def client(db_session):
          patch("routers.v1.auth.redis.get", new_callable=AsyncMock), \
          patch("routers.v1.auth.redis.delete", new_callable=AsyncMock):
         transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="http://testserver") as ac:
+        async with AsyncClient(transport=transport, base_url="http://localhost") as ac:
             yield ac
 
     app.dependency_overrides.clear()

@@ -29,6 +29,7 @@ class Setting(BaseSettings):
     STRIPE_HOOK_SECRET: str
 
     APP_URL: str
+    COOKIE_DOMAIN: str
 
     class Config:
         env_file = ".env"

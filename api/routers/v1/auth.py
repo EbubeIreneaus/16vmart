@@ -113,7 +113,7 @@ async def signup(
             token,
             expires=access_token_expired_at,
             samesite="lax",
-            domain=f".{setting.APP_URL}",
+            domain=f"{setting.COOKIE_DOMAIN}",
             secure=IS_SECURE,
         )
         response.set_cookie(
@@ -122,7 +122,7 @@ async def signup(
             expires=refresh_token_expired_at,
             httponly=True,
             samesite="lax",
-            domain=f".{setting.APP_URL}",
+            domain=f"{setting.COOKIE_DOMAIN}",
             secure=IS_SECURE,
         )
 
@@ -233,7 +233,7 @@ async def signin(
             token,
             expires=access_token_expired_at,
             samesite="lax",
-            domain=f".{setting.APP_URL}",
+            domain=f"{setting.COOKIE_DOMAIN}",
             secure=IS_SECURE,
         )
         response.set_cookie(
@@ -242,7 +242,7 @@ async def signin(
             expires=refresh_token_expired_at,
             httponly=True,
             samesite="lax",
-            domain=f".{setting.APP_URL}",
+            domain=f"{setting.COOKIE_DOMAIN}",
             secure=IS_SECURE,
         )
 
@@ -333,7 +333,7 @@ async def refresh_token(
         token,
         expires=access_token_expire_at,
         samesite="lax",
-        domain=f".{setting.APP_URL}",
+        domain=f"{setting.COOKIE_DOMAIN}",
         secure=IS_SECURE,
     )
     response.set_cookie(
@@ -342,7 +342,7 @@ async def refresh_token(
         expires=refresh_token_exp_at,
         httponly=True,
         samesite="lax",
-        domain=f".{setting.APP_URL}",
+        domain=f"{setting.COOKIE_DOMAIN}",
         secure=IS_SECURE,
     )
 
@@ -376,8 +376,8 @@ async def signout(
         except Exception:
             pass
 
-    response.delete_cookie("access_token", path="/", domain=f".{setting.APP_URL}")
-    response.delete_cookie("refresh_token", path="/", domain=f".{setting.APP_URL}")
+    response.delete_cookie("access_token", path="/", domain=f"{setting.COOKIE_DOMAIN}")
+    response.delete_cookie("refresh_token", path="/", domain=f"{setting.COOKIE_DOMAIN}")
     return {"success": True}
 
 

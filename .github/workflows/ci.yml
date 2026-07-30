@@ -68,6 +68,7 @@ jobs:
           STRIPE_SECRET: test
           STRIPE_HOOK_SECRET: test
           APP_URL: http://localhost:3000
+          COOKIE_DOMAIN: local
 
       - name: Run Pytest Backend Unit Tests
         run: |
@@ -89,6 +90,7 @@ jobs:
           STRIPE_SECRET: test
           STRIPE_HOOK_SECRET: test
           APP_URL: http://localhost:3000
+          COOKIE_DOMAIN: localhost
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -127,6 +129,7 @@ jobs:
           STRIPE_SECRET: test
           STRIPE_HOOK_SECRET: test
           APP_URL: http://localhost:3000
+          COOKIE_DOMAIN: localhost
 
       - name: Build & Start Nuxt Server & Run Playwright Tests
         run: |

@@ -45,7 +45,7 @@ async def send_welcome_email(ctx, email, fullname):
         message = MessageSchema(
             subject="Welcome to 16vmart - Your Trusted Marketplace",
             recipients=[email],
-            template_body={"fullname": fullname, "url": f"https://{setting.APP_URL}/products"},
+            template_body={"fullname": fullname, "url": f"{setting.APP_URL}/products"},
             subtype=MessageType.html
         )
         fm = FastMail(conf)
