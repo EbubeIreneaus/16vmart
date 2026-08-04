@@ -15,9 +15,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if (!auth.isSeller) {
-    throw createError({
-      statusCode: 403,
-      statusMessage: 'You need a seller account to access this page.',
-    })
+    navigateTo('/seller')
   }
 })

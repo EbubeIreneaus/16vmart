@@ -1,274 +1,417 @@
-# 🛒 16vMart — Enterprise Multi-Vendor E-Commerce Platform
+<h1 align="center">
+  <img src="docs/home-default.png" alt="16vMart — Marketplace for Everyday Life" width="100%"/>
+</h1>
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.139+-009688.svg?style=flat&logo=FastAPI&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Nuxt 3](https://img.shields.io/badge/Nuxt-3.15+-00DC82.svg?style=flat&logo=Nuxt.js&logoColor=white)](https://nuxt.com/)
-[![Python](https://img.shields.io/badge/Python-3.13+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6.svg?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED.svg?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
-[![Redis](https://img.shields.io/badge/Redis-7.0-DC382D.svg?style=flat&logo=redis&logoColor=white)](https://redis.io/)
-[![Stripe](https://img.shields.io/badge/Stripe-SDK-008CDD.svg?style=flat&logo=stripe&logoColor=white)](https://stripe.com/)
+<h1 align="center">16vMart — Production Multi-Vendor E-Commerce Platform</h1>
 
-**16vMart** is a production-grade multi-vendor e-commerce platform designed with scalable system architecture, robust security, distributed task execution, and asynchronous payment processing.
+<p align="center">
+  A full-stack marketplace engineered from the ground up with async Python, Vue 3, distributed background processing, and Stripe-powered multi-vendor payments.
+</p>
 
-Built to handle complex marketplace dynamics, 16vMart enables customers to register, browse independent vendor stores, manage shopping carts, and place orders via a **unified single-checkout payment system**. Background processing handles order aggregation, sub-order splitting per seller, and vendor payout tracking through a dedicated management dashboard.
+<p align="center">
+  <a href="https://16vmart.name.ng" target="_blank"><strong>🌐 Live Demo → 16vmart.name.ng</strong></a>
+</p>
 
----
-
-## 🏗 System Design & Engineering Highlights
-
-This project demonstrates production-ready engineering patterns focused on scalability, idempotency, caching, rate limiting, and clean separation of concerns.
-
-### 1. 💳 Unified Single-Payment & Vendor Payout Architecture
-- **Multi-Vendor Single Checkout**: Customers purchase products from multiple independent vendors in a single transaction.
-- **Asynchronous Payment Integration**: Integrates asynchronous payment processing with metadata-driven order tracking and strict idempotency keys to prevent duplicate charges.
-- **Asynchronous Webhook Processing**: Listens for payment webhook events to verify and process transactions out of the synchronous HTTP request-response cycle.
-- **Vendor Payout Management**: Automatically decomposes unified customer checkout orders into itemized vendor sub-orders, giving administrators and store owners real-time visibility into order fulfillments and pending payouts.
-
-### 2. ⚡ Asynchronous Background Processing
-- **Distributed Job Queue**: Utilizes an asynchronous Redis-backed background worker running as an isolated service to handle heavy background tasks without blocking HTTP API endpoints.
-- **Idempotent Order Splitting**: Background workers calculate sub-totals per store, allocate line items, and generate vendor order breakdowns safely and asynchronously.
-- **Async Notification Pipeline**: Dispatches transactional customer and vendor notifications asynchronously based on queue events.
-
-### 3. 🚀 High-Performance Caching & Session Management
-- **Session Caching**: Eliminates database query overhead on authenticated requests by caching serialized user session state in Redis with automatic TTL expiry.
-- **Store & Product Caching**: Caches store metadata and catalog configurations in Redis to accelerate store routing and page rendering.
-- **Persistent Shopping Carts**: Stores active user shopping carts in Redis for high-speed read/write operations during customer browsing.
-
-### 4. 🗄️ Database Architecture & Query Optimization
-- **Asynchronous ORM**: Powered by asynchronous database access for non-blocking database queries.
-- **Strategic Database Indexing**: Optimized database indexes on frequently queried fields, including product and store slugs, lookup identifiers, order numbers, and seller references.
-- **N+1 Query Elimination**: Implements optimized eager-loading strategies across multi-tiered object graphs (Users, Orders, Items, Products, Categories, and Media).
-- **Data Integrity**: Enforces database-level constraints including composite unique indexes, foreign key relationships, and cascading rules.
-
-### 5. 🔐 Authentication, Session Security & Access Control
-- **Session-Based Authentication**: Secure authentication backed by server-tracked active sessions storing IP address, location, device type, browser user-agent info, and token revocation mechanisms.
-- **Modern Password Hashing**: Enforces high-security password hashing using Argon2.
-- **Role-Based Access Control (RBAC)**: Tiered authorization guards protecting endpoint access by user privilege level:
-  - **Customer**: Standard authenticated shopping and order access.
-  - **Store Owner**: Store dashboard, product catalog, and order fulfillment permissions.
-  - **Admin / Superadmin**: Platform-wide catalog management, store moderation, and payout oversight.
-
-### 6. 🛡️ API Protection & Resilience
-- **Rate Limiting Policy**: Rate limiting protects critical endpoints (such as checkout and authentication) against abuse and brute-force attempts.
-- **Graceful Error Handling**: Unified exception handling for rate limits, payment gateway errors, and domain validation failures.
-
-### 7. 🐳 Containerized Architecture
-- **Multi-Service Orchestration**: Fully containerized environment comprising separate services for the API backend, asynchronous background worker, and Redis caching/queuing service.
-- **Isolated Environments**: Standardized container builds with volume isolation for seamless development and deployment.
+<p align="center">
+  <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-0.139+-009688.svg?style=flat&logo=FastAPI&logoColor=white" alt="FastAPI"/></a>
+  <a href="https://nuxt.com/"><img src="https://img.shields.io/badge/Nuxt-3.x-00DC82.svg?style=flat&logo=Nuxt.js&logoColor=white" alt="Nuxt 3"/></a>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.13+-3776AB.svg?style=flat&logo=python&logoColor=white" alt="Python"/></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.0+-3178C6.svg?style=flat&logo=typescript&logoColor=white" alt="TypeScript"/></a>
+  <a href="https://www.postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-Async_ORM-4169E1.svg?style=flat&logo=postgresql&logoColor=white" alt="PostgreSQL"/></a>
+  <a href="https://redis.io/"><img src="https://img.shields.io/badge/Redis-7-DC382D.svg?style=flat&logo=redis&logoColor=white" alt="Redis"/></a>
+  <a href="https://stripe.com/"><img src="https://img.shields.io/badge/Stripe-SDK_v15-008CDD.svg?style=flat&logo=stripe&logoColor=white" alt="Stripe"/></a>
+  <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-Compose-2496ED.svg?style=flat&logo=docker&logoColor=white" alt="Docker"/></a>
+</p>
 
 ---
 
-## 📐 System Architecture
+## Overview
 
-```mermaid
-flowchart TD
-    subgraph Client Layer
-        Web[Nuxt 3 Frontend / Vue 3]
-    end
+**16vMart** is a production-deployed multi-vendor marketplace where any registered user can open a store, list products, and receive payments — all through a single unified checkout flow. Buyers can add items from multiple independent stores to one cart and pay once; the platform automatically handles splitting the transaction into per-vendor sub-orders in the background.
 
-    subgraph API Gateway & Service Layer
-        API[FastAPI Service - Async ASGI]
-        Limiter[Rate Limiter]
-        RBAC[RBAC & Auth Middleware]
-    end
+The project is built across two isolated services: a **FastAPI async backend** (Python 3.13) and a **Nuxt 3 / Vue 3 frontend** (TypeScript), orchestrated with Docker Compose and deployed live.
 
-    subgraph Storage & Infrastructure Layer
-        Redis[(Redis 7 - Session / Cache / Queue)]
-        DB[(PostgreSQL Database)]
-    end
+Key engineering decisions that differentiate this from a CRUD tutorial:
 
-    subgraph Background Processing Layer
-        Worker[Background Job Worker]
-        Mail[Mail Notification Service]
-    end
+- **Webhook-driven order lifecycle**: Stripe webhooks trigger background jobs via Redis queues — the HTTP layer never blocks on payment processing.
+- **Idempotent checkout**: Every order is guarded by a UUID idempotency key enforced at the database level, preventing duplicate charges even under network retries.
+- **Redis-first session auth**: Authenticated request paths hit Redis first; the database is only queried on cache miss, with TTL-synced expiry.
+- **Distributed ARQ worker**: A self-contained async worker process consumes job queues independently of the API server, enabling horizontal scalability.
 
-    subgraph External Services
-        Stripe[Stripe Payment Gateway]
-        Cloudinary[Cloudinary Media CDN]
-    end
+---
 
-    Web -->|HTTP / REST| API
-    API --> Limiter
-    API --> RBAC
-    API -->|Session & Cart Cache| Redis
-    API -->|Async Queries| DB
-    API -->|Media Uploads| Cloudinary
-    API -->|Create Payment Session| Stripe
-    
-    Stripe -->|Webhooks| API
-    API -->|Enqueue Tasks| Redis
-    Redis -->|Dequeue Tasks| Worker
-    Worker -->|Split Orders & Payouts| DB
-    Worker -->|Send Notifications| Mail
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center"><strong>Marketplace Homepage</strong></td>
+    <td align="center"><strong>Product Catalog with Filters</strong></td>
+  </tr>
+  <tr>
+    <td><img src="docs/home-default.png" alt="Marketplace Homepage"/></td>
+    <td><img src="docs/product-list.png" alt="Product Catalog"/></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Product Detail — Dynamic Attributes</strong></td>
+    <td align="center"><strong>Seller Onboarding — Create Store</strong></td>
+  </tr>
+  <tr>
+    <td><img src="docs/single-product.png" alt="Product Detail Page"/></td>
+    <td><img src="docs/create-store.png" alt="Create a Store"/></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Vendor Dashboard — Catalog Management</strong></td>
+    <td align="center"><strong>Vendor Order & Payout Detail</strong></td>
+  </tr>
+  <tr>
+    <td><img src="docs/store-manage-product.png" alt="Store Product Management"/></td>
+    <td><img src="docs/store-vendor-order-slug.png" alt="Vendor Order Detail"/></td>
+  </tr>
+</table>
+
+---
+
+## System Architecture
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                        CLIENT LAYER                               │
+│         Nuxt 3 / Vue 3 SPA  →  SSR / CSR hybrid rendering       │
+│         Pinia state  │  Nuxt UI  │  TypeScript composables       │
+└────────────────────────────┬─────────────────────────────────────┘
+                             │ REST / JSON (HTTP)
+┌────────────────────────────▼─────────────────────────────────────┐
+│                     API GATEWAY LAYER                             │
+│    FastAPI (ASGI / Uvicorn)  •  CORS  •  SlowAPI Rate Limiting   │
+│    OAuth2PasswordBearer  •  JWT decode  •  RBAC middleware        │
+└───────────┬────────────────────────────────────┬─────────────────┘
+            │                                    │
+  ┌─────────▼──────────┐              ┌──────────▼──────────────┐
+  │   PostgreSQL DB     │              │    Redis 7               │
+  │  AsyncPG + SQLAlch. │              │  Session cache           │
+  │  Alembic migrations │              │  Store / cart cache      │
+  │  Indexed slugs      │              │  ARQ job queue           │
+  └─────────────────────┘              └──────────┬──────────────┘
+                                                  │  dequeue
+                                       ┌──────────▼──────────────┐
+                                       │   ARQ Background Worker  │
+                                       │  update_order task       │
+                                       │  create_vendor_orders    │
+                                       │  transactional email      │
+                                       └─────────────────────────┘
+            │ Stripe Checkout Session                │
+  ┌─────────▼──────────┐              ┌─────────────▼────────────┐
+  │   Stripe SDK v15    │              │  Cloudinary CDN           │
+  │  Async client       │              │  Media upload & hosting  │
+  │  Webhook validation │              └──────────────────────────┘
+  └─────────────────────┘
 ```
 
 ---
 
-## 🔄 Business Workflows
+## Engineering Deep-Dives
 
-### 🛍️ Customer Journey
-1. **Account Registration**: User registers and authenticates securely via session-backed credentials.
-2. **Catalog Browsing**: Search and filter products across categories, stores, and custom attributes.
-3. **Unified Cart**: Add items from multiple independent stores into a single persistent shopping cart.
-4. **Single Checkout**: Complete purchase via a unified payment checkout session.
-5. **Order Processing**: Payment webhooks confirm transactions, update order status, and trigger background vendor order generation.
+### 1. Stripe Checkout + Webhook-Driven Order Pipeline
 
-### 🏪 Store Owner Journey
-1. **Store Setup**: Registered customers apply to open a custom seller store.
-2. **Catalog Management**: Add and manage products with rich text descriptions, custom attributes, and CDN media assets.
-3. **Store Fulfillment**: Track store sales, process itemized sub-orders, and monitor payment payout status.
+Checkout is intentionally kept out of the synchronous HTTP cycle. When a user submits an order:
 
-### 👑 Platform Admin Journey
-1. **Platform Overview**: Monitor platform metrics, global listings, and active stores.
-2. **Store & Product Moderation**: Review, approve, or manage vendor store applications and listings.
-3. **Payout Management**: Review aggregate vendor orders, inspect pending balances, and manage store payouts.
+1. The API creates an `Order` row with `status=PENDING` and generates a Stripe Checkout Session, passing `client_reference_id=order_number` and an **idempotency key** derived from a UUID stored on the order.
+2. The user pays on Stripe's hosted page. Stripe fires a `checkout.session.completed` webhook back to the API.
+3. The webhook handler verifies the Stripe signature and immediately **enqueues an ARQ job** (`update_order`) to the Redis queue — returning `{"received": true}` in milliseconds.
+4. The **background worker** picks up the job, marks the order `PROCESSING`, then enqueues a second job (`create_vendor_orders`) which fans out the purchase into one `VendorOrder` row per store involved, computing each store's subtotal.
+
+This two-stage async fan-out means vendors see their orders appear automatically, with zero admin intervention.
+
+```python
+# routers/v1/order.py — webhook handler
+match event["type"]:
+    case "checkout.session.completed":
+        await arq.enqueue_job(
+            "update_order", ORDER_STATUS.PROCESSING, order_number,
+            _queue_name="16vmart"
+        )
+    case "checkout.session.expired":
+        await arq.enqueue_job(
+            "update_order", ORDER_STATUS.CANCELLED, order_number,
+            _queue_name="16vmart"
+        )
+```
+
+```python
+# bg_task/order.py — vendor order fan-out
+vendor_totals = defaultdict(list)
+for item in order.items:
+    vendor_totals[item.product.store_id].append(item.unit_price * item.quantity)
+
+vendor_orders = [
+    VendorOrder(store_id=sid, order_id=order.id, subtotal=sum(prices))
+    for sid, prices in vendor_totals.items()
+]
+db.add_all(vendor_orders)
+```
+
+### 2. Redis-First Session Authentication
+
+Every authenticated endpoint calls `get_user()`, which checks Redis before touching Postgres:
+
+```python
+session_raw = await redis.get(f"16vmart:session:{session_id}")
+
+if session_raw:
+    session = SessionUserSchema.model_validate_json(session_raw)
+else:
+    # DB fallback — only on cold cache
+    s = await db.scalar(
+        select(Session)
+        .options(selectinload(Session.user))
+        .where(Session.id == session_id, Session.expired_at > now)
+    )
+    # Write-through: cache with remaining TTL from DB record
+    await redis.set(f"16vmart:session:{session.id}", json_session, ex=seconds_left)
+```
+
+Session rows in Postgres track `ip_address`, `device`, `location`, `refresh_token_hash`, and `expired_at` — giving full per-session revocation capability without touching the JWT.
+
+### 3. Dynamic Product Attribute System
+
+Products have a flexible attribute schema tied to their category. Each `AttributeKey` defines a `form_type` (`text`, `number`, `boolean`, `date`, `json`) and optional enum `options`. `ProductAttribute` rows store values in typed columns (`text_value`, `number_value`, `json_value`, etc.) with a composite unique constraint:
+
+```python
+__table_args__ = (
+    UniqueConstraint("product_id", "attribute_id", name="uq_product_attribute"),
+)
+```
+
+Adding a new category with custom specs — RAM for electronics, Fabric for fashion — requires zero code changes. The schema is fully data-driven from the database.
+
+### 4. RBAC with Four Privilege Tiers
+
+| Role | Access |
+|:---|:---|
+| `USER` | Browse catalog, cart, wishlist, place orders |
+| `SELLER` | All USER access + store dashboard, product & order management |
+| `ADMIN` | All SELLER access + platform-wide moderation & payout management |
+| `SUPERADMIN` | Unrestricted platform access |
+
+Guards are implemented as FastAPI dependency functions (`get_user`, `get_store`, `get_admin`, `get_superadmin`) composable via `Depends()`, keeping route handlers free of auth boilerplate.
+
+### 5. N+1 Query Elimination via Selective Eager Loading
+
+SQLAlchemy async queries use `selectinload` chains for nested object graphs only where necessary — never globally. Example from the order detail endpoint:
+
+```python
+select(Order)
+    .options(
+        selectinload(Order.delivery_address),
+        selectinload(Order.items).options(
+            selectinload(OrderProduct.product).options(
+                selectinload(Product.images),
+                selectinload(Product.category)
+            )
+        ),
+    )
+    .where(Order.order_number == order_number, Order.user_id == user.id)
+```
+
+This resolves a full order with nested line items, product images, and categories in **two queries** — not N+1.
 
 ---
 
-## 🧰 Tech Stack Reference
+## Tech Stack
 
-| Layer | Technologies & Tools |
-| :--- | :--- |
-| **Backend Framework** | [FastAPI](https://fastapi.tiangolo.com/), Python 3.13+, Uvicorn |
-| **Frontend Framework** | [Nuxt 3](https://nuxt.com/), Vue 3, TypeScript, Pinia |
-| **UI & Styling** | Nuxt UI, Tailwind CSS, VueUse, ECharts, Tiptap |
-| **Database & ORM** | PostgreSQL, [SQLAlchemy 2.0 Async](https://www.sqlalchemy.org/), Asyncpg, Alembic |
-| **Caching & In-Memory DB** | [Redis 7](https://redis.io/) |
-| **Background Tasks** | ARQ Async Worker Queue |
-| **Payment Gateway** | Stripe SDK & Webhook Processing |
-| **Authentication** | PyJWT, Argon2, OAuth2 Scheme |
+| Layer | Technologies |
+|:---|:---|
+| **Backend** | FastAPI 0.139+, Python 3.13, Uvicorn (ASGI) |
+| **Frontend** | Nuxt 3, Vue 3, TypeScript, Pinia, Nuxt UI, TailwindCSS |
+| **Database** | PostgreSQL, SQLAlchemy 2.0 (async), AsyncPG, Alembic |
+| **Caching & Queue** | Redis 7 (hiredis), ARQ async worker |
+| **Auth** | PyJWT, Argon2 (pwdlib), OAuth2PasswordBearer |
+| **Payments** | Stripe SDK v15 (async client + webhook processing) |
+| **Media** | Cloudinary (upload + CDN hosting) |
 | **Rate Limiting** | SlowAPI |
-| **Media Hosting** | Cloudinary |
-| **DevOps & Containers** | Docker, Docker Compose |
-| **Testing** | Pytest, Pytest-Asyncio, Playwright E2E |
+| **Email** | FastAPI-Mail (transactional HTML templates) |
+| **DevOps** | Docker, Docker Compose |
+| **Testing** | Pytest, Pytest-Asyncio, Playwright (E2E) |
+| **UA Parsing** | ua-parser, user-agents (device/session detection) |
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 16vmart/
-├── compose.yaml                # Multi-container Docker Compose configuration
-├── api/                        # FastAPI Backend Application
-│   ├── alembic/                # Database migration scripts
-│   ├── bg_task/                # Background worker tasks & queue configuration
-│   ├── email_templates/        # HTML transactional email templates
-│   ├── libs/                   # Core security, caching, and rate limiting utilities
-│   ├── models/                 # Database models (User, Store, Product, Order, etc.)
-│   ├── routers/                # REST API endpoints (Auth, Catalog, Store, Admin, Orders)
-│   ├── schemas/                # Pydantic data validation schemas
-│   ├── seed_data/              # Database seeding scripts
-│   ├── Dockerfile              # API container build setup
-│   ├── main.py                 # Application entrypoint & middleware setup
-│   └── pyproject.toml          # Python project specification & dependencies
-└── web/                        # Nuxt 3 Frontend Application
-    ├── app/                    # Vue components, pages, layouts, and store state
-    ├── tests/e2e/              # End-to-end testing suite
-    ├── nuxt.config.ts          # Framework configuration
-    └── package.json            # Frontend dependencies & scripts
+├── compose.yaml                   # Multi-service Docker Compose
+├── api/                           # FastAPI application
+│   ├── alembic/                   # Database migration history
+│   ├── bg_task/
+│   │   ├── config.py              # ARQ WorkerSettings & Redis pool
+│   │   ├── auth.py                # Auth background tasks
+│   │   └── order.py              # update_order / create_vendor_orders jobs
+│   ├── email_templates/           # HTML transactional email templates
+│   ├── libs/
+│   │   ├── deps.py               # Dependency injectors: get_user, get_store, get_admin
+│   │   ├── jwt.py                # JWT encode/decode
+│   │   ├── redis.py              # Shared async Redis client
+│   │   ├── limiter.py            # SlowAPI limiter instance
+│   │   ├── cloudinary.py         # Cloudinary config
+│   │   └── mail_config.py        # FastAPI-Mail connection config
+│   ├── models/
+│   │   ├── user.py               # User, Session, Address, Store
+│   │   ├── product.py            # Product, Category, AttributeKey, ProductAttribute
+│   │   └── shopping.py           # Order, OrderProduct, VendorOrder, Wishlist
+│   ├── routers/v1/
+│   │   ├── auth.py               # Register, login, refresh, logout, sessions
+│   │   ├── order.py              # Checkout, Stripe webhook, order history
+│   │   ├── product.py            # Catalog browsing & search
+│   │   ├── cart.py               # Persistent Redis cart operations
+│   │   ├── wishlist.py           # Wishlist management
+│   │   ├── user.py               # Profile & address management
+│   │   ├── cat.py                # Category tree
+│   │   ├── store/                # Vendor store CRUD, products, orders
+│   │   └── admin/                # Admin platform management
+│   ├── schemas/                   # Pydantic v2 request/response schemas
+│   ├── main.py                    # App factory, middleware, router registration
+│   └── pyproject.toml
+└── web/                           # Nuxt 3 frontend
+    ├── app/
+    │   ├── pages/
+    │   │   ├── index.vue          # Marketplace homepage
+    │   │   ├── products/          # Catalog & product detail
+    │   │   ├── cart.vue           # Shopping cart
+    │   │   ├── checkout/          # Checkout flow + success/cancel
+    │   │   ├── vendor/            # Vendor dashboard (products, orders, profile)
+    │   │   ├── admin/             # Admin dashboard
+    │   │   └── account/           # Customer account & order history
+    │   ├── components/            # Reusable Vue components
+    │   ├── composables/           # API composables (useFetch wrappers)
+    │   ├── stores/                # Pinia state (auth, cart, UI)
+    │   ├── middleware/            # Nuxt route guards
+    │   └── types/                 # TypeScript type definitions
+    ├── tests/e2e/                 # Playwright end-to-end tests
+    └── nuxt.config.ts
 ```
 
 ---
 
-## 🚀 Getting Started
+## Business Workflows
+
+### 🛍️ Customer Journey
+1. Register → session created with device/IP tracking stored in Postgres
+2. Browse catalog with category, price, and condition filters
+3. Add products from **any number of stores** into a single persistent Redis cart
+4. Checkout: one Stripe payment covers all stores in the cart
+5. Stripe webhook fires → background worker confirms payment, fans out vendor sub-orders
+
+### 🏪 Vendor Journey
+1. Open a store (submitted for admin review, moderated before going live)
+2. List products with **category-specific dynamic attributes** and Cloudinary-hosted images
+3. Monitor the vendor dashboard — sales, per-order breakdowns, payout status per `VendorOrder`
+
+### 👑 Admin Journey
+1. Review and approve or suspend store applications
+2. Moderate the global product catalog
+3. Track vendor payout statuses across all platform orders
+
+---
+
+## Getting Started
 
 ### Prerequisites
-- [Docker Engine](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/)
-- [Python 3.13+](https://www.python.org/) (for local API development)
-- [Node.js 20+](https://nodejs.org/) (for local web development)
+- [Docker Engine](https://docs.docker.com/get-docker/) & Docker Compose Plugin
+- [Node.js 20+](https://nodejs.org/) (frontend only)
+- [Python 3.13+](https://www.python.org/) (API local dev only)
 
-### 1. Environment Setup
+### 1. Clone & Configure
 
-Configure environment variables for backend and frontend services:
+```bash
+git clone https://github.com/your-username/16vmart.git
+cd 16vmart
+```
 
-**Backend Configuration (`api/.env`):**
+**`api/.env`** — backend secrets:
 ```env
 APP_NAME=16vMart
 APP_URL=http://localhost:3000
 DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/vmart_db
 REDIS_HOST=redis
-SECRET_KEY=your_super_secret_jwt_key
+REDIS_PORT=6379
+SECRET_KEY=your-jwt-secret
 STRIPE_SECRET=sk_test_...
 STRIPE_HOOK_SECRET=whsec_...
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+MAIL_USERNAME=...
+MAIL_PASSWORD=...
+MAIL_FROM=no-reply@16vmart.com
 ```
 
-**Frontend Configuration (`web/.env`):**
+**`web/.env`** — frontend:
 ```env
 NUXT_PUBLIC_API_BASE=http://localhost:8000/api/v1
 ```
 
----
+### 2. Run with Docker Compose (Recommended)
 
-### 2. Running with Docker Compose (Recommended)
-
-Start all services (API, Background Worker, Redis) with Docker Compose:
+Starts the FastAPI API (with embedded ARQ worker) and Redis:
 
 ```bash
 docker compose up --build
 ```
 
-Access services at:
-- **FastAPI API**: `http://localhost:8000`
-- **Interactive Swagger Docs**: `http://localhost:8000/docs`
-- **Redis Server**: `localhost:6379`
+| Service | URL |
+|:---|:---|
+| FastAPI API | `http://localhost:8000` |
+| Swagger UI | `http://localhost:8000/docs` |
+| Redis | `localhost:6379` |
 
----
+Start the Nuxt frontend separately:
 
-### 3. Local Development (Without Docker)
-
-#### Backend (FastAPI):
 ```bash
+cd web && npm install && npm run dev
+# → http://localhost:3000
+```
+
+### 3. Local Development (No Docker)
+
+```bash
+# Backend
 cd api
-
-# Install dependencies
 pip install -r requirements.txt
-
-# Run database migrations
 alembic upgrade head
-
-# Seed initial database categories and sample products (optional)
-python seed_categories.py
-python seed_products.py
-
-# Start FastAPI application
+python seed_categories.py   # optional
+python seed_products.py     # optional
 uvicorn main:app --reload --port 8000
 
-# In a separate terminal, start the background worker:
+# Background worker (separate terminal)
 arq bg_task.config.WorkerSettings
-```
 
-#### Frontend (Nuxt 3):
-```bash
-cd web
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-Navigate to `http://localhost:3000` in your browser.
-
----
-
-## 🧪 Testing & Quality Assurance
-
-### Backend Unit & Integration Tests
-```bash
-cd api
-pytest
-```
-
-### Frontend End-to-End Tests
-```bash
-cd web
-npm run test:e2e
+# Frontend (separate terminal)
+cd web && npm install && npm run dev
 ```
 
 ---
 
-## 📄 License
-This project is open-source and available under the [MIT License](LICENSE).
+## Testing
+
+```bash
+# Backend unit & integration tests
+cd api && pytest
+
+# Frontend end-to-end (Playwright)
+cd web && npm run test:e2e
+```
+
+---
+
+## Deployment Notes
+
+- The API and ARQ worker are co-hosted in a single Docker container; the worker starts via `asyncio.create_task()` on FastAPI's `startup` event. This works for a single-node deployment — for horizontal scale-out, extract the worker into its own Docker service with a shared Redis connection.
+- Configure your Stripe webhook URL in the Stripe dashboard pointing to `https://your-domain.com/api/v1/shopping/stripe-webhook`.
+- PostgreSQL runs external to the Docker Compose setup, connected via `host.docker.internal` in the current `compose.yaml`.
+
+---
+
+## License
+
+[MIT](LICENSE) — open-source and free to use.

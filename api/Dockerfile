@@ -1,16 +1,33 @@
 FROM python:3.13-slim AS builder
 WORKDIR /app
-COPY requirements.txt ./
-RUN pip3 install --no-cache-dir --user -r requirements.txt
+
+ENV VIRTUAL_ENV=/opt/venv \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+RUN python -m venv "${VIRTUAL_ENV}"
+
+COPY pyproject.toml ./
+
+RUN pip install --upgrade pip && pip install .
 
 
 FROM python:3.13-slim AS runner
 
 WORKDIR /app
 
-COPY --from=builder /root/.local /root/.local
+ENV VIRTUAL_ENV=/opt/venv \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
+
+COPY --from=builder "${VIRTUAL_ENV}" "${VIRTUAL_ENV}"
+
 COPY . .
-ENV PATH="/root/.local/bin:$PATH"
 
 EXPOSE 8000
 

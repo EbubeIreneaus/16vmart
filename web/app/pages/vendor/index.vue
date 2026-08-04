@@ -36,8 +36,11 @@ const { data: stores, error, refresh } = await useAsyncData(
       <NuxtLink
         v-for="store in stores"
         :key="store.slug"
-        :to="`/vendor/${store.slug}`"
-        class="group rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-md cursor-pointer"
+        :to="store.status === 'active' ? `/vendor/${store.slug}` : 'javascript:void(0)'"
+        class="group rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-md"
+        :class="
+          store.status !== 'active' ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
+        "
       >
         <div class="flex items-start justify-between gap-4">
           <div

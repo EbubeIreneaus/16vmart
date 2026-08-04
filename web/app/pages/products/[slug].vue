@@ -11,6 +11,7 @@ const slug = route.params.slug as string
 const cart = useCartStore()
 const wishlist = useWishlistStore()
 const auth = useAuthStore()
+const {api} = useApi()
 
 const addingToCart = ref(false)
 const togglingWishlist = ref(false)
